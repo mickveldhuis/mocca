@@ -12,6 +12,7 @@ from mocca.metadata import Metadata
 
 
 def create_aperture(aperture_type: str, rate: int, metadata: Metadata):
+    """Factory method for creating an Aperture instance."""
     match aperture_type:
         case "telescope":
             return TelescopeAperture(metadata, rate=rate)
@@ -33,7 +34,9 @@ class Aperture:
     get_name (str): return an aperture "name"/identifier
     """
 
-    def __init__(self, metadata, radius, sec_radius=0, rate=3):
+    def __init__(
+        self, metadata: Metadata, radius: float, sec_radius: float = 0, rate: int = 3
+    ):
         """ "The Aperture class constructor.
 
         Parameters
@@ -57,7 +60,7 @@ class Aperture:
             self._is_ray_blocked, signature="(d),(),(),()->()"
         )
 
-    def _transform(self, ha, dec):
+    def _transform(self, ha: float, dec: float):
         """ "Get the transformation matrix to the aperture.
 
         Parameters
@@ -79,7 +82,7 @@ class Aperture:
 
         return H
 
-    def _sample_disk(self, r_min=0):
+    def _sample_disk(self, r_min: float = 0):
         """
         Equidistant disk sampling based on:
         http://www.holoborodko.com/pavel/2015/07/23/generating-equidistant-points-on-unit-disk/
@@ -124,7 +127,7 @@ class Aperture:
 
         return xy
 
-    def _sample_aperture(self, ha, dec, x, z):
+    def _sample_aperture(self, ha: float, dec: float, x: np.ndarray, z: np.ndarray):
         """
         Compute the position of a vector in
         the aperture's frame.
@@ -147,7 +150,7 @@ class Aperture:
 
         return product[:, :3]
 
-    def _aperture_direction(self, ha, dec):
+    def _aperture_direction(self, ha: float, dec: float):
         """
         Return the pointing direction of the aperture
         in the frame of the dome.
@@ -167,7 +170,7 @@ class Aperture:
 
         return vec3(direction)
 
-    def _is_ray_blocked(self, point, ha, dec, dome_az):
+    def _is_ray_blocked(self, point: np.ndarray, ha: float, dec: float, dome_az: float):
         """
         Checks whether an individual ray is blocked.
 
@@ -219,7 +222,9 @@ class Aperture:
 
         return is_blocked
 
-    def obstruction(self, ha, dec, dome_az, plot_result=False):
+    def obstruction(
+        self, ha: float, dec: float, dome_az: float, plot_result: bool = False
+    ):
         """
         Compute the % obstruction of the aperture by the dome.
 
@@ -259,7 +264,7 @@ class Aperture:
 class TelescopeAperture(Aperture):
     """Primary aperture."""
 
-    def __init__(self, metadata, rate=4):
+    def __init__(self, metadata: Metadata, rate: int = 4):
         super().__init__(
             metadata,
             metadata.aperture_radius,
@@ -273,7 +278,7 @@ class TelescopeAperture(Aperture):
 class GuiderAperture(Aperture):
     """Autoguider aperture."""
 
-    def __init__(self, metadata, rate=3):
+    def __init__(self, metadata: Metadata, rate: int = 3):
         super().__init__(
             metadata,
             metadata.guider_radius,
@@ -283,7 +288,7 @@ class GuiderAperture(Aperture):
 
         self._name = "guider"
 
-    def _transform(self, ha, dec):
+    def _transform(self, ha: float, dec: float):
         # Get aperture geometry
         L_4 = self.meta.guider_offset
         angle = self.meta.guider_angle
@@ -302,12 +307,12 @@ class GuiderAperture(Aperture):
 class FinderAperture(Aperture):
     """Finderscope aperture."""
 
-    def __init__(self, metadata, rate=3):
+    def __init__(self, metadata: Metadata, rate: int = 3):
         super().__init__(metadata, metadata.finder_radius, rate=rate)
 
         self._name = "finder"
 
-    def _transform(self, ha, dec):
+    def _transform(self, ha: float, dec: float):
         # Get aperture geometry
         L_4 = self.meta.guider_offset
         L_5 = self.meta.finder_offset

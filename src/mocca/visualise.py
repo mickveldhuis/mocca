@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_aperture_obstruction(ap_x, ap_z, is_blocked, aperture_r, dome_az):
-    """ "Plot the aperture w/ obstructed sample points.
+    """Plot the aperture w/ obstructed sample points.
 
     Parameters
     ----------
