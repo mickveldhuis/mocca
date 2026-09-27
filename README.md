@@ -6,4 +6,18 @@ MOCCA (which stands for **M**ick's aperture **O**bstruction **C**al**C**ul**A**t
 
 ## Usage
 
-With the script `mocca.py`, one can determine the percentage obstruction of the telescope aperture by the dome. Add the `-h` argument to display additional options, such as what aperture (in the case of the Gratama telescope: telescope/guider/finder) and more.
+This project uses [`uv`](https://github.com/astral-sh/uv), so make sure it's installed before continuing.
+
+Clone the repository, navigate to the project folder, and install the dependencies:
+
+```bash
+uv sync
+```
+
+This will create a virtual environment in which `mocca` is available as an executable. Alternatively, you can run the tool as follows:
+
+```bash
+uv run mocca
+```
+
+Add `--help` or `-h` to show the available CLI options.
