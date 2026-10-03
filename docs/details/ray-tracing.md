@@ -4,7 +4,7 @@ This document describes how MOCCA uses ray-tracing techiques to determine apertu
 
 ## Modelling the Telescope and Dome System with Rays and Capsules
 
-MOCCA aims to find the aperture obstruction by 
+### Rays
 
 Rays are line segments,
 
