@@ -1,5 +1,5 @@
 # Project specific files
-/mocca.ini
+/mocca.toml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

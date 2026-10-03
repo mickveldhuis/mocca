@@ -6,7 +6,7 @@ from mocca.aperture import (
 )
 from mocca.metadata import Metadata
 
-MOCCA_INI = "mocca.ini"
+MOCCA_CONFIG = "mocca.toml"
 
 
 def load_or_create_config(config_filename: str | None):
@@ -20,14 +20,14 @@ def load_or_create_config(config_filename: str | None):
 
     # If the user didn't specify a configuration file, look in the current
     # working directory, and create one if it doesn't exist.
-    user_config = Path.cwd() / MOCCA_INI
+    user_config = Path.cwd() / MOCCA_CONFIG
 
     if not user_config.exists():
         print(
-            f"No configuration file called {MOCCA_INI} found in the current working directory. Creating one at: {user_config}."
+            f"No configuration file called {MOCCA_CONFIG} found in the current working directory. Creating one at: {user_config}."
         )
 
-        default_config = Path(__file__).parent / MOCCA_INI
+        default_config = Path(__file__).parent / MOCCA_CONFIG
         default_config.copy(user_config)
 
         # Check again whether the copying is succesful
@@ -124,11 +124,11 @@ def parse_cli_arguments():
 def main():
     args = parse_cli_arguments()
 
-    # Load the telescope-dome configuration from the provided INI file
-    ini_path = load_or_create_config(args.config)
+    # Load the telescope-dome configuration from the provided TOML file
+    config_path = load_or_create_config(args.config)
 
-    print(f"Loading telescope and dome parameters from {ini_path.resolve()}")
-    metadata = Metadata.from_ini(ini_path)
+    print(f"Loading telescope and dome parameters from {config_path.resolve()}")
+    metadata = Metadata.from_file(config_path)
 
     # Compute and (optionally) visualise the obstruction
     aperture = create_aperture(args.aperture, args.rate, metadata)
