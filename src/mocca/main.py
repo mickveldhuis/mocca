@@ -1,15 +1,10 @@
 import argparse
-
 from pathlib import Path
 
 from mocca.aperture import (
-    TelescopeAperture,
-    GuiderAperture,
-    FinderAperture,
     create_aperture,
 )
 from mocca.metadata import Metadata
-
 
 MOCCA_INI = "mocca.ini"
 
@@ -144,6 +139,6 @@ def main():
     )
 
     if blockage is not None:
-        print("Obstruction = {:.2%}".format(blockage))
+        print(f"Obstruction = {blockage:.2%}")
     else:
         print("ERROR:The % obstruction could not be computed!")

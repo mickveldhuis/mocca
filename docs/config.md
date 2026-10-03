@@ -12,6 +12,7 @@ The confguration (INI) file, contains a number of sections:
 - `[observatory]`: contains the location of the observatory on the surface of the Earth, used to calculate the orientation of the equatorial mount.
 
 The default `mocca.ini`, based on the properties of the Blaauw Observatory, has the following structure:
+
 ```
 [mount]
 ; Lengths of the axes in meters
