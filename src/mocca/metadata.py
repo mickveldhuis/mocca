@@ -1,4 +1,4 @@
-import configparser
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -30,55 +30,53 @@ class Metadata:
     latitude: float  # observatory latitude in degrees
 
     @classmethod
-    def from_ini(cls, path: Path):
-        config = configparser.ConfigParser()
-        config.read(path)
+    def from_file(cls, path: Path):
+        with path.open("rb") as config_file:
+            config = tomllib.load(config_file)
 
-        # Telescope:
-        L_1 = config["mount"].getfloat("length_1")  # distance floor-HA axis
-        L_2 = config["mount"].getfloat("length_2")  # distance HA axis-Dec axis
-        L_3 = config["mount"].getfloat("length_3")  # distance Dec axis-tube center
-        L_4 = config["guider"].getfloat(
-            "offset"
-        )  # distance primary tube center-guider center
-        L_5 = config["finder"].getfloat(
-            "offset"
-        )  # distance guider center-finder center
+            # Telescope:
+            L_1 = config["mount"].get("length_1")  # distance floor-HA axis
+            L_2 = config["mount"].get("length_2")  # distance HA axis-Dec axis
+            L_3 = config["mount"].get("length_3")  # distance Dec axis-tube center
+            L_4 = config["guider"].get(
+                "offset"
+            )  # distance primary tube center-guider center
+            L_5 = config["finder"].get("offset")  # distance guider center-finder center
 
-        guider_angle = np.radians(config["guider"].getfloat("angle"))
-        finder_angle = np.radians(config["finder"].getfloat("angle"))
+            guider_angle = np.radians(config["guider"].get("angle"))
+            finder_angle = np.radians(config["finder"].get("angle"))
 
-        aperture_radius = config["telescope"].getfloat("diameter") / 2
-        aperture_sec_radius = config["telescope"].getfloat("sec_diameter") / 2
+            aperture_radius = config["telescope"].get("diameter") / 2
+            aperture_sec_radius = config["telescope"].get("sec_diameter") / 2
 
-        guider_radius = config["guider"].getfloat("diameter") / 2
-        guider_sec_radius = config["guider"].getfloat("sec_diameter") / 2
+            guider_radius = config["guider"].get("diameter") / 2
+            guider_sec_radius = config["guider"].get("sec_diameter") / 2
 
-        finder_radius = config["finder"].getfloat("diameter") / 2
+            finder_radius = config["finder"].get("diameter") / 2
 
-        # Dome:
-        radius = config["dome"].getfloat("diameter") / 2  # radius
-        extent = config["dome"].getfloat("extent")  # extent of cylindrical dome wall
-        slit_width = config["dome"].getfloat("slit_width")  # Slit width
+            # Dome:
+            radius = config["dome"].get("diameter") / 2  # radius
+            extent = config["dome"].get("extent")  # extent of cylindrical dome wall
+            slit_width = config["dome"].get("slit_width")  # Slit width
 
-        # Observatory:
-        latitude = config["observatory"].getfloat("latitude")  # degrees
+            # Observatory:
+            latitude = config["observatory"].get("latitude")  # degrees
 
-        return cls(
-            L_1,
-            L_2,
-            L_3,
-            L_4,
-            L_5,
-            guider_angle,
-            finder_angle,
-            aperture_radius,
-            aperture_sec_radius,
-            guider_radius,
-            guider_sec_radius,
-            finder_radius,
-            radius,
-            extent,
-            slit_width,
-            latitude,
-        )
+            return cls(
+                L_1,
+                L_2,
+                L_3,
+                L_4,
+                L_5,
+                guider_angle,
+                finder_angle,
+                aperture_radius,
+                aperture_sec_radius,
+                guider_radius,
+                guider_sec_radius,
+                finder_radius,
+                radius,
+                extent,
+                slit_width,
+                latitude,
+            )

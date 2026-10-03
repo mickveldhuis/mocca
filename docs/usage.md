@@ -13,10 +13,10 @@ This uses the default configuration of the Blaauw Observatory and calculates the
 A custom configuration can be provided as follows:
 
 ```bash
-$ mocca --ha 10 --dec 90 --az 10 --config custom.ini
+$ mocca --ha 10 --dec 90 --az 10 --config custom.toml
 ```
 
-To configure the properties of the telescope and dome, MOCCA provides an INI file (`mocca.ini`) the first time the user runs MOCCA without providing any custom configuration file; this file is written to the current working directory. The default values in this file are based on the properties of the Blaauw Observatory and can be modified by the user. For more information about this configuration file and the available properties, refer to the following document: [Configuring MOCCA](config.md).
+To configure the properties of the telescope and dome, MOCCA provides a TOML file (`mocca.toml`) the first time the user runs MOCCA without providing any custom configuration file; this file is written to the current working directory. The default values in this file are based on the properties of the Blaauw Observatory and can be modified by the user. For more information about this configuration file and the available properties, refer to the following document: [Configuring MOCCA](config.md).
 
 The tool is specifically developed for telescope setups with a dedicated autoguider and finderscope, thus, we provide configuration options and the ability to select one of these apertures on the command line. For example, to calculate the obstruction of the autoguider, we can add the `--aperture` or `-a` option:
 
