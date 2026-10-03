@@ -1,14 +1,12 @@
 import sys
 
 import numpy as np
-import matplotlib.pyplot as plt
-
 from pytransform3d import transformations as pt
 
-from mocca.raytracting import find_intersection, get_ray_intersection
-from mocca.transformations import vec3, vec4, transform, rot_x, rot_z
-from mocca.visualise import plot_aperture_obstruction
 from mocca.metadata import Metadata
+from mocca.raytracting import find_intersection, get_ray_intersection
+from mocca.transformations import rot_x, rot_z, transform, vec3, vec4
+from mocca.visualise import plot_aperture_obstruction
 
 
 def create_aperture(aperture_type: str, rate: int, metadata: Metadata):
@@ -186,39 +184,35 @@ class Aperture:
 
         direction = self._aperture_direction(ha, dec)
 
-        try:
-            dome_radius = self.meta.dome_radius
-            dome_extent = self.meta.dome_extent
-            dome_slit_width = self.meta.dome_slit_width
-            has_intersection, t = find_intersection(
-                point, direction, dome_radius, dome_extent
-            )
+        dome_radius = self.meta.dome_radius
+        dome_extent = self.meta.dome_extent
+        dome_slit_width = self.meta.dome_slit_width
+        has_intersection, t = find_intersection(
+            point, direction, dome_radius, dome_extent
+        )
 
-            if has_intersection:
-                points = get_ray_intersection(point, direction, t)
+        if has_intersection:
+            points = get_ray_intersection(point, direction, t)
 
-                az_corrected = (
-                    dome_az - 180
-                ) % 360  # Correction assuming the azimuth is zero at the South
-                rot = rot_z(az_corrected)
+            az_corrected = (
+                dome_az - 180
+            ) % 360  # Correction assuming the azimuth is zero at the South
+            rot = rot_z(az_corrected)
 
-                dummy = np.ones(points[0].size)
-                pp = np.column_stack((points[0], points[1], points[2], dummy))
+            dummy = np.ones(points[0].size)
+            pp = np.column_stack((points[0], points[1], points[2], dummy))
 
-                product = pt.transform(rot, pp)
+            product = pt.transform(rot, pp)
 
-                r = dome_radius * np.sin(np.radians(15))
+            r = dome_radius * np.sin(np.radians(15))
 
-                x_cond = -dome_slit_width / 2 < product[:, 0] < dome_slit_width / 2
-                y_cond = -r < product[:, 1] < dome_radius
+            x_cond = -dome_slit_width / 2 < product[:, 0] < dome_slit_width / 2
+            y_cond = -r < product[:, 1] < dome_radius
 
-                is_ray_in_slit = points[2] > dome_extent and x_cond and y_cond
+            is_ray_in_slit = points[2] > dome_extent and x_cond and y_cond
 
-                if is_ray_in_slit:
-                    is_blocked = False
-
-        except Exception as ex:
-            print("ERROR OCCURRED DURING _is_blocked CALC...!\nERROR MSG:", str(ex))
+            if is_ray_in_slit:
+                is_blocked = False
 
         return is_blocked
 

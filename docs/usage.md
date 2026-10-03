@@ -32,6 +32,6 @@ $ mocca --ha 10 --dec 90 --az 10 --rate 5 --visualise
 
 In this example, we simulate the aperture using five rings of rays and visualise the aperture by plotting all the points and highlighting the blocked rays, as shown in the image below. Note that we take into account blockage of aperture by the secondary mirror.
 
-![Screenshot the plot created by `--visualise` option](_static/mocca_visualisation_option.png)
+![Screenshot the plot created by  option](_static/mocca_visualisation_option.png)
 
 It's worth noting that the `--visualise` option spawns a window with the diagnostic plot, hence, won't work on a headless system.

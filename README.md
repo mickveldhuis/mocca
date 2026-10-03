@@ -2,7 +2,7 @@
 
 ## About
 
-MOCCA (which stands for **M**ick's aperture **O**bstruction **C**al**C**ul**A**tor) allows you to compute the percentage obstruction of the aperture of a telescope aperture, on an equatorial mount, by a hemispherical dome using basic ray tracing techniques. 
+MOCCA (which stands for **M**ick's aperture **O**bstruction **C**al**C**ul**A**tor) allows you to compute the percentage obstruction of the aperture of a telescope aperture, on an equatorial mount, by a hemispherical dome using basic ray tracing techniques.
 
 This tool was created as part of undergraduate research and let to an upgrade of the dome control software used by the [Blaauw Observatory](https://www.rug.nl/research/kapteyn/sterrenwacht/), which is mainly used for outreach and as a training facility for students of the Faculty of Science and Engineering at the University of Groningen.
 
@@ -22,7 +22,7 @@ This will create a virtual environment in which `mocca` is available as an execu
 uv run mocca
 ```
 
-Add `--help` or `-h` to show the available CLI options. 
+Add `--help` or `-h` to show the available CLI options.
 
 ## Documentation
 
