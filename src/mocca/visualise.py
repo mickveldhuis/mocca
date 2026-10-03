@@ -21,9 +21,9 @@ def plot_aperture_obstruction(ap_x, ap_z, is_blocked, aperture_r, dome_az):
         ap_x[is_blocked],
         ap_z[is_blocked],
         ls="",
-        marker="o",
+        marker="^",
         ms=3,
-        color="xkcd:salmon",
+        color="green",
         label="{:.1%} Blocked".format(percentage),
     )
     frame.plot(
