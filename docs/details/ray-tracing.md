@@ -1,10 +1,10 @@
 # Ray Tracing
 
-Summary of (the most) relevant topics from ray tracing theory, taken from the book [3D Game Engine Design](https://doi.org/10.1201/b18212) by David Eberly.
+This document describes how MOCCA uses ray-tracing techiques to determine aperture obstruction. For the interested reader, the theory used in this document is based the following book: [3D Game Engine Design by David Eberly (2006)](https://doi.org/10.1201/b18212).
 
-## Modelling the Telescope and Dome System with Rays, Spheres, and Capsules
+## Modelling the Telescope and Dome System with Rays and Capsules
 
-### Rays
+MOCCA aims to find the aperture obstruction by 
 
 Rays are line segments,
 
@@ -25,7 +25,7 @@ where $r$ is the radius, $\mathbf{X}$ some point on the sphere, and $\mathbf{C}$
 A capsule, with center $\mathbf{C}$, extent $e$ (height of the cylindrical part is $2e$), and radius $r$, can be described by,
 
 $$
-\bigg\{\begin{array}{ll}
+\begin{array}{ll}
     x^2+y^2=r^2 & \quad -e\le &z\le e \\
     x^2+y^2+(z-e)^2=r^2 & \quad &z>e \\
     x^2+y^2+(z+e)^2=r^2 & \quad &z<e

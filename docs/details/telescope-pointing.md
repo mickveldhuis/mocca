@@ -4,9 +4,6 @@ To determine how much of the telescope's aperture is obstructed by the dome, the
 
 For the former, we use formalism from the robotics community, such as described in Chapters 2-4 of the book [*Robotics* (Mihelj, et al. 2018)](https://doi.org/10.1007/978-3-319-72911-4), which we use to express the apertures in the telescope-dome frame.
 
-a rough sketch of the telescope and mount. Note: (0) is the origin of the dome, (1) is the height of the RA axis above the floor of the dome, (2) is the intersection of the RA and Dec axis, (3) is the intersection of the telescope tube center and the declination axis, (4) could be some position along the optical axis of the telescope.
-
-
 
 ## Position of the telescope's aperture
 
@@ -93,7 +90,7 @@ where $\mathbf{d}=\mathbf{r}_t(y)-\mathbf{r}_t(0)$.
 
 The application has been developed with the design of the Gratama telescope at the Blaauw Observatory in Groningen in mind, which also has an autoguider and finderscope, as shown in the figure below; this is a 3D model of the telescope. Assuming that your setup is somewhat similar, MOCCA can be tailored to your needs.
 
-![Gratama telescope model](../_static/telescope_model.png)
+[![Gratama telescope model from Veldhuis (2021)](../_static/telescope_model.png)](https://doi.org/10.5281/zenodo.5086375)
 
 
 MOCCA assumes by default that the autoguider is situated at 45 degrees from the primary aperture and the centre of its aperture is displaced by a distance $\ell_4$, though both this angle and displacement are [configurable](../config.md).
