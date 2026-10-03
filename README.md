@@ -26,4 +26,4 @@ Add `--help` or `-h` to show the available CLI options.
 
 ## Documentation
 
-The methods are described in detail in Chapters 3 and 4 of [*M. Veldhuis (2021), Remodeling Dome Control: Applications for the Blaauw Observatory*](https://fse.studenttheses.ub.rug.nl/id/eprint/25172) and the most relevant information is summarised in this repository's [documentation](docs/).
+The methods are described in detail in Chapters 3 and 4 of [*M. Veldhuis (2021), Remodeling Dome Control: Applications for the Blaauw Observatory*](https://fse.studenttheses.ub.rug.nl/id/eprint/25172) and usage of the tool is described in this repository's [documentation](docs/).
