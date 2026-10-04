@@ -1,17 +1,15 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def plot_aperture_obstruction(ap_x, ap_z, is_blocked, aperture_r, dome_az):
-    """Plot the aperture w/ obstructed sample points.
-
-    Parameters
-    ----------
-
-    ap_x, ap_z: x, z coordinates of the sampled points
-    is_blocked: boolean array of len(ap_x) signifying whether a point is obstructed
-    aperture_r: radius of the aperture in meters
-    dome_az: position of the dome (azimuth angle in deg)
-    """
+def plot_aperture_obstruction(
+    ap_x: np.ndarray,
+    ap_z: np.ndarray,
+    is_blocked: np.ndarray,
+    aperture_r: float,
+    dome_az: float,
+):
+    """Plot the aperture w/ obstructed sample points."""
     percentage = is_blocked[is_blocked].size / is_blocked.size
 
     fig = plt.figure(figsize=(4.5, 4.5), num="MOCCA - Visualisation")
