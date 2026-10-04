@@ -8,7 +8,7 @@ from mocca.transformations import rot_z
 
 
 @np.vectorize(signature="(p),(q),(),()->()")
-def check_blockage(
+def check_obstruction(
     point: np.ndarray, direction: np.ndarray, dome_az: float, metadata: Metadata
 ):
     """
@@ -42,7 +42,7 @@ def check_blockage(
 
         product = pt.transform(rot, pp)
 
-        r = dome_radius * np.sin(np.radians(15))
+        r = dome_radius * np.sin(np.radians(15))  # TODO: document this magic angle!
 
         x_cond = -dome_slit_width / 2 < product[:, 0] < dome_slit_width / 2
         y_cond = -r < product[:, 1] < dome_radius
@@ -54,27 +54,22 @@ def check_blockage(
     return is_blocked
 
 
-def calculate_obstruction(
-    aperture: Aperture, ha: float, dec: float, dome_az: float, metadata: Metadata
-):
+def calculate_obstruction(dome_az: float, ha: float, dec: float, aperture: Aperture):
     """
     Compute the % obstruction of the aperture by the dome.
 
     Parameters
     ----------
 
+    dome_az (float): dome azimuth (clockwise convention)
     ha (float): hour angle in degrees
     dec (float): declination in degrees
-    dome_az (float): dome azimuth (clockwise convention)
-    plot_result (bool): if True, a plot with the sampled aperture and obstructed points will be shown
+    aperture (Aperture): telescope aperture
     """
-    ratio = None
-
-    positions = aperture.sample(ha, dec)
+    ray_origins = aperture.sample(ha, dec)
     pointing = aperture.direction(ha, dec)
 
-    # Compute the no. rays, emanating from those points, blocked by the dome
-    blocked = check_blockage(positions, pointing, dome_az, metadata)
+    blocked = check_obstruction(ray_origins, pointing, dome_az, aperture.meta)
 
     ratio = blocked[blocked].size / blocked.size
 

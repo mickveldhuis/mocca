@@ -133,9 +133,7 @@ def main():
     aperture = create_aperture(args.aperture, args.rate, metadata)
 
     ha_deg = args.ha * 15
-    blockage, blocked_rays = calculate_obstruction(
-        aperture, ha_deg, args.dec, args.az, metadata
-    )
+    blockage, blocked_rays = calculate_obstruction(args.az, ha_deg, args.dec, aperture)
 
     if blockage is not None:
         print(f"Obstruction = {blockage:.2%}")
