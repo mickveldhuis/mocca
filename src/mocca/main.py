@@ -1,10 +1,9 @@
 import argparse
 from pathlib import Path
 
-from mocca.aperture import (
-    create_aperture,
-)
+from mocca.aperture import create_aperture
 from mocca.metadata import Metadata
+from mocca.obstruction import calculate_obstruction
 
 MOCCA_CONFIG = "mocca.toml"
 
@@ -134,11 +133,14 @@ def main():
     aperture = create_aperture(args.aperture, args.rate, metadata)
 
     ha_deg = args.ha * 15
-    blockage = aperture.obstruction(
-        ha_deg, args.dec, args.az, plot_result=args.visualise
+    blockage, blocked_rays = calculate_obstruction(
+        aperture, ha_deg, args.dec, args.az, metadata
     )
 
     if blockage is not None:
         print(f"Obstruction = {blockage:.2%}")
     else:
         print("ERROR:The % obstruction could not be computed!")
+
+    if args.visualise:
+        aperture.visualise(blocked_rays, args.az)
