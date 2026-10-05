@@ -2,14 +2,14 @@ import numpy as np
 from pytransform3d import transformations as pt
 
 from mocca.aperture import Aperture
-from mocca.metadata import Metadata
+from mocca.metadata import DomeInfo
 from mocca.raytracting import find_intersection, get_ray_intersection
 from mocca.transformations import rot_z
 
 
 @np.vectorize(signature="(p),(q),(),()->()")
 def check_obstruction(
-    point: np.ndarray, direction: np.ndarray, dome_az: float, metadata: Metadata
+    point: np.ndarray, direction: np.ndarray, dome_az: float, dome_info: DomeInfo
 ) -> np.ndarray:
     """
     Checks whether an individual ray is blocked.
@@ -21,9 +21,9 @@ def check_obstruction(
     """
     is_blocked = True
 
-    dome_radius = metadata.dome_radius
-    dome_extent = metadata.dome_extent
-    dome_slit_width = metadata.dome_slit_width
+    dome_radius = dome_info.dome_radius
+    dome_extent = dome_info.dome_extent
+    dome_slit_width = dome_info.dome_slit_width
     has_intersection, t = find_intersection(point, direction, dome_radius, dome_extent)
 
     if has_intersection:
@@ -52,7 +52,7 @@ def check_obstruction(
 
 
 def calculate_obstruction(
-    dome_az: float, ha: float, dec: float, aperture: Aperture
+    dome_az: float, ha: float, dec: float, aperture: Aperture, info: DomeInfo
 ) -> tuple[float, np.ndarray]:
     """
     Compute the % obstruction of the aperture by the dome.
@@ -65,7 +65,7 @@ def calculate_obstruction(
     ray_origins = aperture.sample(ha, dec)
     pointing = aperture.direction(ha, dec)
 
-    blocked = check_obstruction(ray_origins, pointing, dome_az, aperture.meta)
+    blocked = check_obstruction(ray_origins, pointing, dome_az, info)
 
     ratio = blocked[blocked].size / blocked.size
 

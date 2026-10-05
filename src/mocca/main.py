@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from mocca.aperture import create_aperture
-from mocca.metadata import Metadata
+from mocca.metadata import DomeInfo, TelescopeInfo
 from mocca.obstruction import calculate_obstruction
 from mocca.visualise import plot_aperture_obstruction
 
@@ -128,13 +128,16 @@ def main():
     config_path = load_or_create_config(args.config)
 
     print(f"Loading telescope and dome parameters from {config_path.resolve()}")
-    metadata = Metadata.from_file(config_path)
+    telescope_info = TelescopeInfo.from_file(config_path)
+    dome_info = DomeInfo.from_file(config_path)
 
     # Compute and (optionally) visualise the obstruction
-    aperture = create_aperture(args.aperture, args.rate, metadata)
+    aperture = create_aperture(args.aperture, args.rate, telescope_info)
 
     ha_deg = args.ha * 15
-    blockage, blocked_rays = calculate_obstruction(args.az, ha_deg, args.dec, aperture)
+    blockage, blocked_rays = calculate_obstruction(
+        args.az, ha_deg, args.dec, aperture, dome_info
+    )
 
     if blockage is not None:
         aperture_id = aperture.identifier().capitalize()
