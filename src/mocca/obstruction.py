@@ -10,7 +10,7 @@ from mocca.transformations import rot_z
 @np.vectorize(signature="(p),(q),(),()->()")
 def check_obstruction(
     point: np.ndarray, direction: np.ndarray, dome_az: float, metadata: Metadata
-):
+) -> np.ndarray:
     """
     Checks whether an individual ray is blocked.
 
@@ -51,7 +51,9 @@ def check_obstruction(
     return is_blocked
 
 
-def calculate_obstruction(dome_az: float, ha: float, dec: float, aperture: Aperture):
+def calculate_obstruction(
+    dome_az: float, ha: float, dec: float, aperture: Aperture
+) -> tuple[float, np.ndarray]:
     """
     Compute the % obstruction of the aperture by the dome.
 

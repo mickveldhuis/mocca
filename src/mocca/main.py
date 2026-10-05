@@ -9,7 +9,7 @@ from mocca.visualise import plot_aperture_obstruction
 MOCCA_CONFIG = "mocca.toml"
 
 
-def load_or_create_config(config_filename: str | None):
+def load_or_create_config(config_filename: str | None) -> Path:
     if config_filename:
         user_config = Path(config_filename).resolve()
 
@@ -137,9 +137,10 @@ def main():
     blockage, blocked_rays = calculate_obstruction(args.az, ha_deg, args.dec, aperture)
 
     if blockage is not None:
-        print(f"Obstruction = {blockage:.2%}")
+        aperture_id = aperture.identifier().capitalize()
+        print(f"{aperture_id} aperture obstruction = {blockage:.2%}")
     else:
-        print("ERROR:The % obstruction could not be computed!")
+        raise RuntimeError("The % obstruction could not be computed")
 
     if args.visualise:
         plot_aperture_obstruction(aperture, blocked_rays, args.az)

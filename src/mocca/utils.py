@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def sample_unit_disk(sample_rate, r_min: float = 0.0):
+def sample_unit_disk(sample_rate, r_min: float = 0.0) -> np.ndarray:
     """
     Equidistant disk sampling based on:
     http://www.holoborodko.com/pavel/2015/07/23/generating-equidistant-points-on-unit-disk/
@@ -29,7 +29,6 @@ def sample_unit_disk(sample_rate, r_min: float = 0.0):
 
     for r in radii:
         n_angular_samples = int(np.round(np.pi / np.arcsin(1 / (2 * k))))
-        print(f"n = {n_angular_samples}")
 
         theta = np.linspace(0, 2 * np.pi, n_angular_samples + 1)
         x_r = r * np.cos(theta)

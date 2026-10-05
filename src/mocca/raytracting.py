@@ -3,7 +3,7 @@ import numpy as np
 
 def find_intersection(
     point: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
-):
+) -> tuple[bool, float]:
     """Find ray-capsule (i.e. ray-dome) intersection.
 
     Parameters
