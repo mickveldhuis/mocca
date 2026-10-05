@@ -4,6 +4,7 @@ from pathlib import Path
 from mocca.aperture import create_aperture
 from mocca.metadata import Metadata
 from mocca.obstruction import calculate_obstruction
+from mocca.visualise import plot_aperture_obstruction
 
 MOCCA_CONFIG = "mocca.toml"
 
@@ -141,4 +142,4 @@ def main():
         print("ERROR:The % obstruction could not be computed!")
 
     if args.visualise:
-        aperture.visualise(blocked_rays, args.az)
+        plot_aperture_obstruction(aperture, blocked_rays, args.az)

@@ -6,7 +6,6 @@ from pytransform3d import transformations as pt
 from mocca.metadata import Metadata
 from mocca.transformations import rot_x, rot_z, transform, vec3, vec4
 from mocca.utils import sample_unit_disk
-from mocca.visualise import plot_aperture_obstruction
 
 
 def create_aperture(aperture_type: str, rate: int, metadata: Metadata):
@@ -122,21 +121,6 @@ class Aperture:
         product = pt.transform(pose_matrix, points)
 
         return product[:, :3]
-
-    def visualise(self, blocked_rays: np.ndarray, dome_az: float):
-        """
-        Highlight which rays, representing the aperture, are blocked.
-
-        :param blocked_rays: boolean array highlighting which rays are blocked
-        :param dome_az: dome azimuth for which the blockage was calculated (used in the title of the plot)
-        """
-        inner_blocked_radius = self.sec_radius / self.radius
-        unit_disk = sample_unit_disk(self.sample_rate, r_min=inner_blocked_radius)
-        disk = self.radius * unit_disk
-        ap_x = disk[:, 0]
-        ap_z = disk[:, 1]
-
-        plot_aperture_obstruction(ap_x, ap_z, blocked_rays, self.radius, dome_az)
 
     def get_name(self):
         """Return aperture identifier."""
