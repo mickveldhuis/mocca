@@ -52,6 +52,9 @@ def plot_aperture_obstruction(
     frame.set_title(f"Dome azimuth = {float(dome_az) % 360:.1f} deg", fontsize=18)
 
     frame.legend(fontsize=12, loc="lower right")
+
+    frame.set_aspect("equal")
+
     fig.tight_layout()
 
     plt.show()
