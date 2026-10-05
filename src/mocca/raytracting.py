@@ -56,7 +56,9 @@ def find_intersection(
     return has_intersection, t
 
 
-def get_ray_intersection(point: np.ndarray, direction: np.ndarray, t: float):
+def get_ray_intersection(
+    point: np.ndarray, direction: np.ndarray, t: float
+) -> np.ndarray:
     """
     Return the ray intersection, based on the origin
     (point) and direction vectors.

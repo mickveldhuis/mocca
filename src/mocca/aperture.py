@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 from pytransform3d import transformations as pt
 
@@ -8,7 +6,7 @@ from mocca.transformations import rot_x, rot_z, transform, vec3, vec4
 from mocca.utils import sample_unit_disk
 
 
-def create_aperture(aperture_type: str, rate: int, metadata: Metadata):
+def create_aperture(aperture_type: str, rate: int, metadata: Metadata) -> Aperture:
     """Factory method for creating an Aperture instance."""
     match aperture_type:
         case "telescope":
@@ -18,26 +16,16 @@ def create_aperture(aperture_type: str, rate: int, metadata: Metadata):
         case "finder":
             return FinderAperture(metadata, rate=rate)
         case _:
-            sys.exit(1)
+            raise ValueError("Unknown aperture type")
 
 
 class Aperture:
-    """Class representing the telescope aperture.
-
-    Public methods
-    --------------
-
-    obstruction (float): return the % obstruction of the aperture by the dome
-    get_name (str): return an aperture "name"/identifier
-    """
+    """Class representing the telescope aperture."""
 
     def __init__(
         self, metadata: Metadata, radius: float, sec_radius: float = 0, rate: int = 3
-    ):
+    ) -> None:
         """ "The Aperture class constructor.
-
-        Parameters
-        ----------
 
         radius (float): aperture radius in meters
         sec_radius (float): radius of secondary obstruction in meters
@@ -48,18 +36,18 @@ class Aperture:
         self.sec_radius = sec_radius
         self.sample_rate = rate
 
-        self._name = None
-
         self.meta = metadata
 
-    def transform(self, ha: float, dec: float):
-        """ "Get the transformation matrix to the aperture.
+        self._id = None
 
-        Parameters
-        ----------
+    def transform(self, ha: float, dec: float) -> np.ndarray:
+        """
+        Calculate the transformation matrix from
+        the aperture to the dome frame.
 
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
+        :returns: aperture-to-dome transformation matrix
         """
         L_1 = self.meta.height
         L_2 = self.meta.ha_axis_offset
@@ -74,13 +62,14 @@ class Aperture:
 
         return H
 
-    def direction(self, ha: float, dec: float):
+    def direction(self, ha: float, dec: float) -> np.ndarray:
         """
         Return the pointing direction of the aperture
         in the frame of the dome.
 
         :param ha: hour angle in degrees
         :param dec: declination in degrees
+        :returns: pointing vector in the dome frame
         """
         H_ap = self.transform(ha, dec)
         H_unit = transform(0, 1, 0)
@@ -91,13 +80,14 @@ class Aperture:
 
         return vec3(direction)
 
-    def sample(self, ha: float, dec: float):
+    def sample(self, ha: float, dec: float) -> np.ndarray:
         """
         Compute the position of a vector in
         the aperture's frame.
 
         :param ha: hour angle in degrees
         :param dec: declination in degrees
+        :returns: the aperture sampled in the dome frame
         """
         inner_blocked_radius = self.sec_radius / self.radius
         unit_disk = sample_unit_disk(self.sample_rate, r_min=inner_blocked_radius)
@@ -118,15 +108,15 @@ class Aperture:
 
         return product[:, :3]
 
-    def get_name(self):
+    def identifier(self) -> str:
         """Return aperture identifier."""
-        return self._name
+        return self._id
 
 
 class TelescopeAperture(Aperture):
     """Primary aperture."""
 
-    def __init__(self, metadata: Metadata, rate: int = 4):
+    def __init__(self, metadata: Metadata, rate: int = 4) -> None:
         super().__init__(
             metadata,
             metadata.aperture_radius,
@@ -134,13 +124,13 @@ class TelescopeAperture(Aperture):
             rate=rate,
         )
 
-        self._name = "telescope"
+        self._id = "telescope"
 
 
 class GuiderAperture(Aperture):
     """Autoguider aperture."""
 
-    def __init__(self, metadata: Metadata, rate: int = 3):
+    def __init__(self, metadata: Metadata, rate: int = 3) -> None:
         super().__init__(
             metadata,
             metadata.guider_radius,
@@ -148,9 +138,9 @@ class GuiderAperture(Aperture):
             rate=rate,
         )
 
-        self._name = "guider"
+        self._id = "guider"
 
-    def transform(self, ha: float, dec: float):
+    def transform(self, ha: float, dec: float) -> np.ndarray:
         # Get the telescope aperture pose
         H_telescope = super().transform(ha, dec)
 
@@ -169,12 +159,12 @@ class GuiderAperture(Aperture):
 class FinderAperture(Aperture):
     """Finderscope aperture."""
 
-    def __init__(self, metadata: Metadata, rate: int = 3):
+    def __init__(self, metadata: Metadata, rate: int = 3) -> None:
         super().__init__(metadata, metadata.finder_radius, rate=rate)
 
-        self._name = "finder"
+        self._id = "finder"
 
-    def transform(self, ha: float, dec: float):
+    def transform(self, ha: float, dec: float) -> np.ndarray:
         # Get the telescope aperture pose
         H_telescope = super().transform(ha, dec)
 
@@ -183,7 +173,7 @@ class FinderAperture(Aperture):
         L_5 = self.meta.finder_offset
 
         guider_angle = self.meta.guider_angle
-        finder_angle = self.meta.guider_angle
+        finder_angle = self.meta.finder_angle
 
         # Transform telescope aperture to guider aperture & guider to finder
         H_34 = transform(L_4 * np.cos(guider_angle), 0, L_4 * np.sin(guider_angle))

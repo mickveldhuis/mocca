@@ -1,6 +1,7 @@
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Self
 
 import numpy as np
 
@@ -30,7 +31,7 @@ class Metadata:
     latitude: float  # observatory latitude in degrees
 
     @classmethod
-    def from_file(cls, path: Path):
+    def from_file(cls, path: Path) -> Self:
         with path.open("rb") as config_file:
             config = tomllib.load(config_file)
 
