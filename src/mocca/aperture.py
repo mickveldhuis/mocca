@@ -5,6 +5,7 @@ from pytransform3d import transformations as pt
 
 from mocca.metadata import Metadata
 from mocca.transformations import rot_x, rot_z, transform, vec3, vec4
+from mocca.utils import sample_unit_disk
 from mocca.visualise import plot_aperture_obstruction
 
 
@@ -74,61 +75,13 @@ class Aperture:
 
         return H
 
-    def _sample_disk(self, r_min: float = 0):
-        """
-        Equidistant disk sampling based on:
-        http://www.holoborodko.com/pavel/2015/07/23/generating-equidistant-points-on-unit-disk/
-
-        Parameters
-        ----------
-
-        r_min (float): ratio of the circle that is obstructed at the center
-        """
-        if not 0 <= r_min < 1:
-            raise ValueError("r_min should be between 0 and 1...")
-
-        dr = 1 / self.sample_rate
-
-        x = np.empty(0)
-        y = np.empty(0)
-
-        rs = np.linspace(r_min, 1, self.sample_rate)
-        k = np.ceil(r_min * (self.sample_rate + 1))
-
-        if not r_min:
-            x = np.concatenate([x, [0]])
-            y = np.concatenate([y, [0]])
-
-            rs = np.linspace(dr, 1, self.sample_rate)
-            k = 1
-
-        for r in rs:
-            n = int(np.round(np.pi / np.arcsin(1 / (2 * k))))
-
-            theta = np.linspace(0, 2 * np.pi, n + 1)
-
-            x_r = r * np.cos(theta)
-            y_r = r * np.sin(theta)
-
-            x = np.concatenate([x, x_r])
-            y = np.concatenate([y, y_r])
-
-            k += 1
-
-        xy = self.radius * np.column_stack([x, y])
-
-        return xy
-
     def direction(self, ha: float, dec: float):
         """
         Return the pointing direction of the aperture
         in the frame of the dome.
 
-        Parameters
-        ----------
-
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
         """
         H_ap = self._transform(ha, dec)
         H_unit = transform(0, 1, 0)
@@ -144,23 +97,24 @@ class Aperture:
         Compute the position of a vector in
         the aperture's frame.
 
-        Parameters
-        ----------
-
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
-        x (float ndarray): x coordinate of a point in the aperture
-        z (float ndarray): z coordinate of a point in the aperture
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
         """
         # Sample points in a disk; resembling the aperture
-        ap_xz = self._sample_disk(r_min=self.sec_radius / self.radius)
-        ap_x, ap_z = ap_xz.T
+        # ap_xz = self._sample_disk(r_min=self.sec_radius / self.radius)
+        # ap_x, ap_z = ap_xz.T
 
-        # Transfor those points to the aperture frame
-        x = -ap_x
-        y = np.zeros(ap_x.size)
-        z = ap_z
-        ones = np.ones(ap_x.size)
+        inner_blocked_radius = self.sec_radius / self.radius
+        unit_disk = sample_unit_disk(self.sample_rate, r_min=inner_blocked_radius)
+        disk = self.radius * unit_disk
+
+        # Transform these sampled points to the aperture frame
+        n_samples = disk.shape[0]
+
+        x = -disk[:, 0]
+        y = np.zeros(n_samples)
+        z = disk[:, 1]
+        ones = np.ones(n_samples)
         points = np.column_stack((x, y, z, ones))
 
         pose_matrix = self._transform(ha, dec)
@@ -170,9 +124,17 @@ class Aperture:
         return product[:, :3]
 
     def visualise(self, blocked_rays: np.ndarray, dome_az: float):
-        # Resample points in a disk resembling the aperture
-        ap_xz = self._sample_disk(r_min=self.sec_radius / self.radius)
-        ap_x, ap_z = ap_xz.T
+        """
+        Highlight which rays, representing the aperture, are blocked.
+
+        :param blocked_rays: boolean array highlighting which rays are blocked
+        :param dome_az: dome azimuth for which the blockage was calculated (used in the title of the plot)
+        """
+        inner_blocked_radius = self.sec_radius / self.radius
+        unit_disk = sample_unit_disk(self.sample_rate, r_min=inner_blocked_radius)
+        disk = self.radius * unit_disk
+        ap_x = disk[:, 0]
+        ap_z = disk[:, 1]
 
         plot_aperture_obstruction(ap_x, ap_z, blocked_rays, self.radius, dome_az)
 

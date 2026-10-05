@@ -14,13 +14,10 @@ def check_obstruction(
     """
     Checks whether an individual ray is blocked.
 
-    Parameters
-    ----------
-
-    point (3-vector): ray origin
-    ha (float): hour angle in degrees
-    dec (float): declination in degrees
-    dome_az (float): dome azimuth (clockwise convention)
+    :param point: ray origin
+    :param ha: hour angle in degrees
+    :param dec: declination in degrees
+    :param dome_az: dome azimuth (clockwise convention)
     """
     is_blocked = True
 
@@ -58,13 +55,10 @@ def calculate_obstruction(dome_az: float, ha: float, dec: float, aperture: Apert
     """
     Compute the % obstruction of the aperture by the dome.
 
-    Parameters
-    ----------
-
-    dome_az (float): dome azimuth (clockwise convention)
-    ha (float): hour angle in degrees
-    dec (float): declination in degrees
-    aperture (Aperture): telescope aperture
+    :param dome_az: dome azimuth (clockwise convention)
+    :param ha: hour angle in degrees
+    :param dec: declination in degrees
+    :param aperture: telescope aperture
     """
     ray_origins = aperture.sample(ha, dec)
     pointing = aperture.direction(ha, dec)
