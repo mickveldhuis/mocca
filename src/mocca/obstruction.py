@@ -9,7 +9,7 @@ from mocca.transformations import rot_z
 
 @np.vectorize(signature="(p),(q),(),()->()")
 def check_obstruction(
-    point: np.ndarray, direction: np.ndarray, dome_az: float, dome_info: DomeInfo
+    point: np.ndarray, direction: np.ndarray, dome_az: float, info: DomeInfo
 ) -> np.ndarray:
     """
     Checks whether an individual ray is blocked.
@@ -18,12 +18,13 @@ def check_obstruction(
     :param ha: hour angle in degrees
     :param dec: declination in degrees
     :param dome_az: dome azimuth (clockwise convention)
+    :param info: dome properties
     """
     is_blocked = True
 
-    dome_radius = dome_info.dome_radius
-    dome_extent = dome_info.dome_extent
-    dome_slit_width = dome_info.dome_slit_width
+    dome_radius = info.dome_radius
+    dome_extent = info.dome_extent
+    dome_slit_width = info.dome_slit_width
     has_intersection, t = find_intersection(point, direction, dome_radius, dome_extent)
 
     if has_intersection:
@@ -61,6 +62,7 @@ def calculate_obstruction(
     :param ha: hour angle in degrees
     :param dec: declination in degrees
     :param aperture: telescope aperture
+    :param info: dome properties
     """
     ray_origins = aperture.sample(ha, dec)
     pointing = aperture.direction(ha, dec)

@@ -33,7 +33,7 @@ class Aperture:
         :param radius: aperture radius in meters
         :param sec_radius: radius of secondary mirror in meters
         :param rate: aperture sample rate (in terms of the number of radial circles around the center)
-        :telescope_info: metadata object with the telescope's geometrical properties
+        :param info: metadata object with the telescope's geometrical properties
         """
         self.radius = radius
         self.sec_radius = sec_radius
@@ -143,7 +143,7 @@ class GuiderAperture(Aperture):
 
         self._id = "guider"
 
-    def transform(self, ha: float, dec: float) -> np.ndarray:
+    def transformation(self, ha: float, dec: float) -> np.ndarray:
         # Get the telescope aperture pose
         H_telescope = super().transformation(ha, dec)
 
@@ -167,7 +167,7 @@ class FinderAperture(Aperture):
 
         self._id = "finder"
 
-    def transform(self, ha: float, dec: float) -> np.ndarray:
+    def transformation(self, ha: float, dec: float) -> np.ndarray:
         # Get the telescope aperture pose
         H_telescope = super().transformation(ha, dec)
 
