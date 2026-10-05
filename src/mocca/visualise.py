@@ -17,8 +17,8 @@ def plot_aperture_obstruction(
     inner_blocked_radius = aperture.sec_radius / aperture.radius
     unit_disk = sample_unit_disk(aperture.sample_rate, r_min=inner_blocked_radius)
     disk = aperture.radius * unit_disk
-    ap_x = disk[:, 0]
-    ap_z = disk[:, 1]
+    ap_x = disk[0]
+    ap_z = disk[1]
 
     fig = plt.figure(figsize=(4.5, 4.5), num="MOCCA - Visualisation")
     frame = fig.add_subplot(1, 1, 1)

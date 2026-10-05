@@ -52,7 +52,7 @@ class Aperture:
 
         self.meta = metadata
 
-    def _transform(self, ha: float, dec: float):
+    def transform(self, ha: float, dec: float):
         """ "Get the transformation matrix to the aperture.
 
         Parameters
@@ -82,7 +82,7 @@ class Aperture:
         :param ha: hour angle in degrees
         :param dec: declination in degrees
         """
-        H_ap = self._transform(ha, dec)
+        H_ap = self.transform(ha, dec)
         H_unit = transform(0, 1, 0)
 
         H_diff = H_ap @ H_unit - H_ap
@@ -99,24 +99,20 @@ class Aperture:
         :param ha: hour angle in degrees
         :param dec: declination in degrees
         """
-        # Sample points in a disk; resembling the aperture
-        # ap_xz = self._sample_disk(r_min=self.sec_radius / self.radius)
-        # ap_x, ap_z = ap_xz.T
-
         inner_blocked_radius = self.sec_radius / self.radius
         unit_disk = sample_unit_disk(self.sample_rate, r_min=inner_blocked_radius)
         disk = self.radius * unit_disk
 
-        # Transform these sampled points to the aperture frame
-        n_samples = disk.shape[0]
+        # Transform these samples to the aperture frame
+        n_samples = disk.shape[1]
 
-        x = -disk[:, 0]
+        x = -disk[0]
         y = np.zeros(n_samples)
-        z = disk[:, 1]
+        z = disk[1]
         ones = np.ones(n_samples)
         points = np.column_stack((x, y, z, ones))
 
-        pose_matrix = self._transform(ha, dec)
+        pose_matrix = self.transform(ha, dec)
 
         product = pt.transform(pose_matrix, points)
 
@@ -154,16 +150,16 @@ class GuiderAperture(Aperture):
 
         self._name = "guider"
 
-    def _transform(self, ha: float, dec: float):
+    def transform(self, ha: float, dec: float):
+        # Get the telescope aperture pose
+        H_telescope = super().transform(ha, dec)
+
         # Get aperture geometry
         L_4 = self.meta.guider_offset
         angle = self.meta.guider_angle
 
         # Transform telescope aperture to guider aperture
         H_34 = transform(L_4 * np.cos(angle), 0, L_4 * np.sin(angle))
-
-        # Get the telescope aperture pose
-        H_telescope = super()._transform(ha, dec)
 
         H = H_telescope @ H_34
 
@@ -178,7 +174,10 @@ class FinderAperture(Aperture):
 
         self._name = "finder"
 
-    def _transform(self, ha: float, dec: float):
+    def transform(self, ha: float, dec: float):
+        # Get the telescope aperture pose
+        H_telescope = super().transform(ha, dec)
+
         # Get aperture geometry
         L_4 = self.meta.guider_offset
         L_5 = self.meta.finder_offset
@@ -189,9 +188,6 @@ class FinderAperture(Aperture):
         # Transform telescope aperture to guider aperture & guider to finder
         H_34 = transform(L_4 * np.cos(guider_angle), 0, L_4 * np.sin(guider_angle))
         H_45 = transform(-L_5 * np.cos(finder_angle), 0, L_5 * np.sin(finder_angle))
-
-        # Get the telescope aperture pose
-        H_telescope = super()._transform(ha, dec)
 
         H = H_telescope @ H_34 @ H_45
 
