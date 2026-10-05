@@ -1,15 +1,15 @@
 import argparse
 from pathlib import Path
 
-from mocca.aperture import (
-    create_aperture,
-)
-from mocca.metadata import Metadata
+from mocca.aperture import create_aperture
+from mocca.metadata import DomeInfo, TelescopeInfo
+from mocca.obstruction import calculate_obstruction
+from mocca.visualise import plot_aperture_obstruction
 
 MOCCA_CONFIG = "mocca.toml"
 
 
-def load_or_create_config(config_filename: str | None):
+def load_or_create_config(config_filename: str | None) -> Path:
     if config_filename:
         user_config = Path(config_filename).resolve()
 
@@ -128,17 +128,22 @@ def main():
     config_path = load_or_create_config(args.config)
 
     print(f"Loading telescope and dome parameters from {config_path.resolve()}")
-    metadata = Metadata.from_file(config_path)
+    telescope_info = TelescopeInfo.from_file(config_path)
+    dome_info = DomeInfo.from_file(config_path)
 
     # Compute and (optionally) visualise the obstruction
-    aperture = create_aperture(args.aperture, args.rate, metadata)
+    aperture = create_aperture(args.aperture, args.rate, telescope_info)
 
     ha_deg = args.ha * 15
-    blockage = aperture.obstruction(
-        ha_deg, args.dec, args.az, plot_result=args.visualise
+    blockage, blocked_rays = calculate_obstruction(
+        args.az, ha_deg, args.dec, aperture, dome_info
     )
 
     if blockage is not None:
-        print(f"Obstruction = {blockage:.2%}")
+        aperture_id = aperture.identifier().capitalize()
+        print(f"{aperture_id} aperture obstruction = {blockage:.2%}")
     else:
-        print("ERROR:The % obstruction could not be computed!")
+        raise RuntimeError("The % obstruction could not be computed")
+
+    if args.visualise:
+        plot_aperture_obstruction(aperture, blocked_rays, args.az)

@@ -1,13 +1,14 @@
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Self
 
 import numpy as np
 
 
 @dataclass
-class Metadata:
-    """This clas represents the metadata required for computing the telescope-dome geometry."""
+class TelescopeInfo:
+    """This clas represents the telescope's geometry."""
 
     height: float  # distance floor-HA axis (L_1)
     ha_axis_offset: float  # distance HA axis-Dec axis (L_2)
@@ -23,18 +24,13 @@ class Metadata:
     guider_sec_radius: float
     finder_radius: float
 
-    dome_radius: float  # dome radius in meters
-    dome_extent: float  # extent of the cylindrical dome wall in meters
-    dome_slit_width: float  # slit width in meters
-
     latitude: float  # observatory latitude in degrees
 
     @classmethod
-    def from_file(cls, path: Path):
+    def from_file(cls, path: Path) -> Self:
         with path.open("rb") as config_file:
             config = tomllib.load(config_file)
 
-            # Telescope:
             L_1 = config["mount"].get("length_1")  # distance floor-HA axis
             L_2 = config["mount"].get("length_2")  # distance HA axis-Dec axis
             L_3 = config["mount"].get("length_3")  # distance Dec axis-tube center
@@ -54,13 +50,11 @@ class Metadata:
 
             finder_radius = config["finder"].get("diameter") / 2
 
-            # Dome:
-            radius = config["dome"].get("diameter") / 2  # radius
-            extent = config["dome"].get("extent")  # extent of cylindrical dome wall
-            slit_width = config["dome"].get("slit_width")  # Slit width
-
-            # Observatory:
-            latitude = config["observatory"].get("latitude")  # degrees
+            latitude = config[
+                "observatory"
+            ].get(
+                "latitude"
+            )  # Observatory latitude in degrees, as expected by the transformations defined in transformations.py
 
             return cls(
                 L_1,
@@ -75,8 +69,25 @@ class Metadata:
                 guider_radius,
                 guider_sec_radius,
                 finder_radius,
-                radius,
-                extent,
-                slit_width,
                 latitude,
             )
+
+
+@dataclass
+class DomeInfo:
+    """This class describes the geometry of a hemispherical dome."""
+
+    dome_radius: float  # dome radius in meters
+    dome_extent: float  # extent of the cylindrical dome wall in meters
+    dome_slit_width: float  # slit width in meters
+
+    @classmethod
+    def from_file(cls, path: Path) -> Self:
+        with path.open("rb") as config_file:
+            config = tomllib.load(config_file)
+
+            radius = config["dome"].get("diameter") / 2  # radius
+            extent = config["dome"].get("extent")  # extent of cylindrical dome wall
+            slit_width = config["dome"].get("slit_width")  # Slit width
+
+            return cls(radius, extent, slit_width)

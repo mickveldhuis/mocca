@@ -1,76 +1,61 @@
-import sys
-
 import numpy as np
 from pytransform3d import transformations as pt
 
-from mocca.metadata import Metadata
-from mocca.raytracting import find_intersection, get_ray_intersection
+from mocca.metadata import TelescopeInfo
 from mocca.transformations import rot_x, rot_z, transform, vec3, vec4
-from mocca.visualise import plot_aperture_obstruction
+from mocca.utils import sample_unit_disk
 
 
-def create_aperture(aperture_type: str, rate: int, metadata: Metadata):
+def create_aperture(
+    aperture_type: str, rate: int, telescope_info: TelescopeInfo
+) -> Aperture:
     """Factory method for creating an Aperture instance."""
     match aperture_type:
         case "telescope":
-            return TelescopeAperture(metadata, rate=rate)
+            return TelescopeAperture(telescope_info, rate=rate)
         case "guider":
-            return GuiderAperture(metadata, rate=rate)
+            return GuiderAperture(telescope_info, rate=rate)
         case "finder":
-            return FinderAperture(metadata, rate=rate)
+            return FinderAperture(telescope_info, rate=rate)
         case _:
-            sys.exit(1)
+            raise ValueError("Unknown aperture type")
 
 
 class Aperture:
-    """Class representing the telescope aperture.
-
-    Public methods
-    --------------
-
-    obstruction (float): return the % obstruction of the aperture by the dome
-    get_name (str): return an aperture "name"/identifier
-    """
+    """Class representing the telescope aperture."""
 
     def __init__(
-        self, metadata: Metadata, radius: float, sec_radius: float = 0, rate: int = 3
-    ):
-        """ "The Aperture class constructor.
+        self, info: TelescopeInfo, radius: float, sec_radius: float = 0, rate: int = 3
+    ) -> None:
+        """
+        Construct a telescope aperture.
 
-        Parameters
-        ----------
-
-        radius (float): aperture radius in meters
-        sec_radius (float): radius of secondary obstruction in meters
-        rate (int): aperture sample rate (in terms of no. radial circles around the center)
-        metadata (Metadata):
+        :param radius: aperture radius in meters
+        :param sec_radius: radius of secondary mirror in meters
+        :param rate: aperture sample rate (in terms of the number of radial circles around the center)
+        :param info: metadata object with the telescope's geometrical properties
         """
         self.radius = radius
         self.sec_radius = sec_radius
         self.sample_rate = rate
 
-        self._name = None
+        self.info = info
 
-        self.meta = metadata
+        self._id = None
 
-        # Add a vectorized instance of the _is_ray_blocked function
-        self._is_blocked = np.vectorize(
-            self._is_ray_blocked, signature="(d),(),(),()->()"
-        )
-
-    def _transform(self, ha: float, dec: float):
-        """ "Get the transformation matrix to the aperture.
-
-        Parameters
-        ----------
-
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
+    def transformation(self, ha: float, dec: float) -> np.ndarray:
         """
-        L_1 = self.meta.height
-        L_2 = self.meta.ha_axis_offset
-        L_3 = self.meta.dec_axis_offset
-        lat = self.meta.latitude
+        Calculate the transformation matrix from
+        the aperture to the dome frame.
+
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
+        :returns: aperture-to-dome transformation matrix
+        """
+        L_1 = self.info.height
+        L_2 = self.info.ha_axis_offset
+        L_3 = self.info.dec_axis_offset
+        lat = self.info.latitude
 
         H_01 = transform(0, 0, L_1)
         H_12 = rot_x(90 - lat) @ rot_z(-ha) @ transform(0, 0, L_2)
@@ -80,86 +65,16 @@ class Aperture:
 
         return H
 
-    def _sample_disk(self, r_min: float = 0):
-        """
-        Equidistant disk sampling based on:
-        http://www.holoborodko.com/pavel/2015/07/23/generating-equidistant-points-on-unit-disk/
-
-        Parameters
-        ----------
-
-        r_min (float): ratio of the circle that is obstructed at the center
-        """
-        if not 0 <= r_min < 1:
-            raise ValueError("r_min should be between 0 and 1...")
-
-        dr = 1 / self.sample_rate
-
-        x = np.empty(0)
-        y = np.empty(0)
-
-        rs = np.linspace(r_min, 1, self.sample_rate)
-        k = np.ceil(r_min * (self.sample_rate + 1))
-
-        if not r_min:
-            x = np.concatenate([x, [0]])
-            y = np.concatenate([y, [0]])
-
-            rs = np.linspace(dr, 1, self.sample_rate)
-            k = 1
-
-        for r in rs:
-            n = int(np.round(np.pi / np.arcsin(1 / (2 * k))))
-
-            theta = np.linspace(0, 2 * np.pi, n + 1)
-
-            x_r = r * np.cos(theta)
-            y_r = r * np.sin(theta)
-
-            x = np.concatenate([x, x_r])
-            y = np.concatenate([y, y_r])
-
-            k += 1
-
-        xy = self.radius * np.column_stack([x, y])
-
-        return xy
-
-    def _sample_aperture(self, ha: float, dec: float, x: np.ndarray, z: np.ndarray):
-        """
-        Compute the position of a vector in
-        the aperture's frame.
-
-        Parameters
-        ----------
-
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
-        x (float ndarray): x coordinate of a point in the aperture
-        z (float ndarray): z coordinate of a point in the aperture
-        """
-        y = np.zeros(x.size)
-        dummy = np.ones(x.size)
-        points = np.column_stack((x, y, z, dummy))
-
-        pose_matrix = self._transform(ha, dec)
-
-        product = pt.transform(pose_matrix, points)
-
-        return product[:, :3]
-
-    def _aperture_direction(self, ha: float, dec: float):
+    def direction(self, ha: float, dec: float) -> np.ndarray:
         """
         Return the pointing direction of the aperture
         in the frame of the dome.
 
-        Parameters
-        ----------
-
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
+        :returns: pointing vector in the dome frame
         """
-        H_ap = self._transform(ha, dec)
+        H_ap = self.transformation(ha, dec)
         H_unit = transform(0, 1, 0)
 
         H_diff = H_ap @ H_unit - H_ap
@@ -168,130 +83,76 @@ class Aperture:
 
         return vec3(direction)
 
-    def _is_ray_blocked(self, point: np.ndarray, ha: float, dec: float, dome_az: float):
+    def sample(self, ha: float, dec: float) -> np.ndarray:
         """
-        Checks whether an individual ray is blocked.
+        Compute the position of a vector in
+        the aperture's frame.
 
-        Parameters
-        ----------
-
-        point (3-vector): ray origin
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
-        dome_az (float): dome azimuth (clockwise convention)
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
+        :returns: the aperture sampled in the dome frame
         """
-        is_blocked = True
+        inner_blocked_radius = self.sec_radius / self.radius
+        unit_disk = sample_unit_disk(self.sample_rate, r_min=inner_blocked_radius)
+        disk = self.radius * unit_disk
 
-        direction = self._aperture_direction(ha, dec)
+        # Transform these samples to the aperture frame
+        n_samples = disk.shape[1]
 
-        dome_radius = self.meta.dome_radius
-        dome_extent = self.meta.dome_extent
-        dome_slit_width = self.meta.dome_slit_width
-        has_intersection, t = find_intersection(
-            point, direction, dome_radius, dome_extent
-        )
+        x = -disk[0]
+        y = np.zeros(n_samples)
+        z = disk[1]
+        ones = np.ones(n_samples)
+        points = np.column_stack((x, y, z, ones))
 
-        if has_intersection:
-            points = get_ray_intersection(point, direction, t)
+        pose_matrix = self.transformation(ha, dec)
 
-            az_corrected = (
-                dome_az - 180
-            ) % 360  # Correction assuming the azimuth is zero at the South
-            rot = rot_z(az_corrected)
+        product = pt.transform(pose_matrix, points)
 
-            dummy = np.ones(points[0].size)
-            pp = np.column_stack((points[0], points[1], points[2], dummy))
+        return product[:, :3]
 
-            product = pt.transform(rot, pp)
-
-            r = dome_radius * np.sin(np.radians(15))
-
-            x_cond = -dome_slit_width / 2 < product[:, 0] < dome_slit_width / 2
-            y_cond = -r < product[:, 1] < dome_radius
-
-            is_ray_in_slit = points[2] > dome_extent and x_cond and y_cond
-
-            if is_ray_in_slit:
-                is_blocked = False
-
-        return is_blocked
-
-    def obstruction(
-        self, ha: float, dec: float, dome_az: float, plot_result: bool = False
-    ):
-        """
-        Compute the % obstruction of the aperture by the dome.
-
-        Parameters
-        ----------
-
-        ha (float): hour angle in degrees
-        dec (float): declination in degrees
-        dome_az (float): dome azimuth (clockwise convention)
-        plot_result (bool): if True, a plot with the sampled aperture and obstructed points will be shown
-        """
-        ratio = None
-
-        # Sample points in a disk; resembling the aperture
-        ap_xz = self._sample_disk(r_min=self.sec_radius / self.radius)
-
-        ap_x, ap_z = ap_xz.T
-
-        # Transfor those points to the aperture frame
-        ap_pos = self._sample_aperture(ha, dec, -ap_x, ap_z)
-
-        # Compute the no. rays, emanating from those points, blocked by the dome
-        blocked = self._is_blocked(ap_pos, ha, dec, dome_az)
-
-        ratio = blocked[blocked].size / blocked.size
-
-        if plot_result:
-            plot_aperture_obstruction(ap_x, ap_z, blocked, self.radius, dome_az)
-
-        return ratio
-
-    def get_name(self):
+    def identifier(self) -> str:
         """Return aperture identifier."""
-        return self._name
+        return self._id
 
 
 class TelescopeAperture(Aperture):
     """Primary aperture."""
 
-    def __init__(self, metadata: Metadata, rate: int = 4):
+    def __init__(self, info: TelescopeInfo, rate: int = 4) -> None:
         super().__init__(
-            metadata,
-            metadata.aperture_radius,
-            sec_radius=metadata.aperture_sec_radius,
+            info,
+            info.aperture_radius,
+            sec_radius=info.aperture_sec_radius,
             rate=rate,
         )
 
-        self._name = "telescope"
+        self._id = "telescope"
 
 
 class GuiderAperture(Aperture):
     """Autoguider aperture."""
 
-    def __init__(self, metadata: Metadata, rate: int = 3):
+    def __init__(self, info: TelescopeInfo, rate: int = 3) -> None:
         super().__init__(
-            metadata,
-            metadata.guider_radius,
-            sec_radius=metadata.guider_sec_radius,
+            info,
+            info.guider_radius,
+            sec_radius=info.guider_sec_radius,
             rate=rate,
         )
 
-        self._name = "guider"
+        self._id = "guider"
 
-    def _transform(self, ha: float, dec: float):
+    def transformation(self, ha: float, dec: float) -> np.ndarray:
+        # Get the telescope aperture pose
+        H_telescope = super().transformation(ha, dec)
+
         # Get aperture geometry
-        L_4 = self.meta.guider_offset
-        angle = self.meta.guider_angle
+        L_4 = self.info.guider_offset
+        angle = self.info.guider_angle
 
         # Transform telescope aperture to guider aperture
         H_34 = transform(L_4 * np.cos(angle), 0, L_4 * np.sin(angle))
-
-        # Get the telescope aperture pose
-        H_telescope = super()._transform(ha, dec)
 
         H = H_telescope @ H_34
 
@@ -301,25 +162,25 @@ class GuiderAperture(Aperture):
 class FinderAperture(Aperture):
     """Finderscope aperture."""
 
-    def __init__(self, metadata: Metadata, rate: int = 3):
-        super().__init__(metadata, metadata.finder_radius, rate=rate)
+    def __init__(self, info: TelescopeInfo, rate: int = 3) -> None:
+        super().__init__(info, info.finder_radius, rate=rate)
 
-        self._name = "finder"
+        self._id = "finder"
 
-    def _transform(self, ha: float, dec: float):
+    def transformation(self, ha: float, dec: float) -> np.ndarray:
+        # Get the telescope aperture pose
+        H_telescope = super().transformation(ha, dec)
+
         # Get aperture geometry
-        L_4 = self.meta.guider_offset
-        L_5 = self.meta.finder_offset
+        L_4 = self.info.guider_offset
+        L_5 = self.info.finder_offset
 
-        guider_angle = self.meta.guider_angle
-        finder_angle = self.meta.guider_angle
+        guider_angle = self.info.guider_angle
+        finder_angle = self.info.finder_angle
 
         # Transform telescope aperture to guider aperture & guider to finder
         H_34 = transform(L_4 * np.cos(guider_angle), 0, L_4 * np.sin(guider_angle))
         H_45 = transform(-L_5 * np.cos(finder_angle), 0, L_5 * np.sin(finder_angle))
-
-        # Get the telescope aperture pose
-        H_telescope = super()._transform(ha, dec)
 
         H = H_telescope @ H_34 @ H_45
 

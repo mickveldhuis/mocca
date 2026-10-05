@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def vec4(x: float, y: float, z: float):
+def vec4(x: float, y: float, z: float) -> np.ndarray:
     """
     Return a 4-element vector, appropriate
     for coordinate transformations.
@@ -9,7 +9,7 @@ def vec4(x: float, y: float, z: float):
     return np.array([x, y, z, 1])
 
 
-def vec3(v4: np.ndarray):
+def vec3(v4: np.ndarray) -> np.ndarray:
     """
     Convert a 4-element vector to a 3-element vector.
     """
@@ -18,7 +18,7 @@ def vec3(v4: np.ndarray):
     return v3
 
 
-def transform(x: float, y: float, z: float):
+def transform(x: float, y: float, z: float) -> np.ndarray:
     """Transform a vector (x', y', z', 1)."""
     return np.array(
         [
@@ -30,7 +30,7 @@ def transform(x: float, y: float, z: float):
     )
 
 
-def rot_x(angle: float):
+def rot_x(angle: float) -> np.ndarray:
     """
     Rotate a vector (x, y, z, 1) about the x-axis
     in a right-handed coordinate system.
@@ -47,7 +47,7 @@ def rot_x(angle: float):
     )
 
 
-def rot_y(angle: float):
+def rot_y(angle: float) -> np.ndarray:
     """
     Rotate a vector (x, y, z, 1) about the y-axis
     in a right-handed coordinate system.
@@ -64,7 +64,7 @@ def rot_y(angle: float):
     )
 
 
-def rot_z(angle: float):
+def rot_z(angle: float) -> np.ndarray:
     """
     Rotate a vector (x, y, z, 1) about the z-axis
     in a right-handed coordinate system.
