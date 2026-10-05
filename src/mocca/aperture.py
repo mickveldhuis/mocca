@@ -52,16 +52,7 @@ class Aperture:
         :param dec: declination in degrees
         :returns: aperture-to-dome transformation matrix
         """
-        L_1 = self.info.height
-        L_2 = self.info.ha_axis_offset
-        L_3 = self.info.dec_axis_offset
-        lat = self.info.latitude
-
-        H_01 = transform(0, 0, L_1)
-        H_12 = rot_x(90 - lat) @ rot_z(-ha) @ transform(0, 0, L_2)
-        H_23 = rot_x(dec) @ transform(-L_3, 0, 0)
-
-        H = H_01 @ H_12 @ H_23
+        H = transform(0.0, 0.0, 0.0)  # unit transformation matrix
 
         return H
 
@@ -79,7 +70,8 @@ class Aperture:
 
         H_diff = H_ap @ H_unit - H_ap
 
-        direction = H_diff @ vec4(0, 0, 0)
+        aperture_origin = vec4(0, 0, 0)
+        direction = H_diff @ aperture_origin
 
         return vec3(direction)
 
@@ -128,6 +120,20 @@ class TelescopeAperture(Aperture):
         )
 
         self._id = "telescope"
+
+    def transformation(self, ha: float, dec: float) -> np.ndarray:
+        L_1 = self.info.height
+        L_2 = self.info.ha_axis_offset
+        L_3 = self.info.dec_axis_offset
+        lat = self.info.latitude
+
+        H_01 = transform(0, 0, L_1)
+        H_12 = rot_x(90 - lat) @ rot_z(-ha) @ transform(0, 0, L_2)
+        H_23 = rot_x(dec) @ transform(-L_3, 0, 0)
+
+        H = H_01 @ H_12 @ H_23
+
+        return H
 
 
 class GuiderAperture(Aperture):

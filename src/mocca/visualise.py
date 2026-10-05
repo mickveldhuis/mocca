@@ -9,7 +9,7 @@ def plot_aperture_obstruction(
     aperture: Aperture,
     is_blocked: np.ndarray,
     dome_az: float,
-):
+) -> None:
     """Plot the aperture w/ obstructed sample points."""
     percentage = is_blocked[is_blocked].size / is_blocked.size
 
