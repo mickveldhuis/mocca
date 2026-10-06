@@ -1,9 +1,11 @@
 import numpy as np
 
-from mocca.mount import CompositeMount, EquatorialMount
+from mocca.mount import CompositeMount, EquatorialMount, Transformable
 
 
-def validate_position_vector(transformation_matrix, expected_vector):
+def validate_position_vector(
+    transformation_matrix: np.ndarray, expected_vector: np.ndarray
+):
     """
     The third column of the transformation matrix gives
     the position of the origin inside of the dome frame.
@@ -25,10 +27,13 @@ def validate_direction_vector(transformation_matrix, expected_vector):
     assert np.allclose(direction_vector, expected_vector)
 
 
-def validate_position_and_direction_for_constant_hour_angle(mount, expected_position):
+def validate_position_and_direction_for_constant_hour_angle(
+    mount: Transformable, expected_position: np.ndarray
+):
     """
-    Validate the mount's transformation matrices for constant hour angle, such
-    that the pointing direction stays constant for changing mount geometry.
+    Validate the mount's transformation matrices for constant
+    hour angle, which implies a constant position inside of
+    the telescope inside of the dome frame.
     """
     constant_ha = 0.0
 
@@ -102,9 +107,9 @@ def test_composite_mount_without_angle():
 
 def test_composite_mount_with_angle():
     """
-    Check whether the CompositeMont creates correct transformation matrices
-    by varying the declination. To simplify the calculations, we consider a
-    constant (zero) HA and a telescope at the north pole.
+    Check whether the CompositeMont (with non-zero angular offset) creates correct
+    transformation matrices by varying the declination. To simplify the calculations,
+    we consider a constant (zero) HA and a telescope at the north pole.
     """
     # Construct the equatorial mount base
     height = 1.0
@@ -115,9 +120,9 @@ def test_composite_mount_with_angle():
 
     # Add an offset mount, without considering an angular offset
     offset = 1.0
-    angle = 0.0
+    angle = 90.0
     mount = CompositeMount(base_mount, offset, angle)
 
     # Consider a constant (zero) hour angle
-    expected_position = [-dec_axis_offset + offset, 0.0, height + ha_axis_offset]
+    expected_position = [-dec_axis_offset - offset, 0.0, height + ha_axis_offset]
     validate_position_and_direction_for_constant_hour_angle(mount, expected_position)

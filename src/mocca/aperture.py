@@ -126,3 +126,6 @@ class Aperture:
         product = pt.transform(pose_matrix, points)
 
         return product[:, :3]
+
+    def __repr__(self):
+        return f"Aperture(mount={self.mount}, radius={self.radius}, sec_radius={self.sec_radius}, rate={self.sample_rate})"

@@ -4,7 +4,7 @@ from typing import Protocol, Self, runtime_checkable
 import numpy as np
 
 from mocca.metadata import TelescopeInfo
-from mocca.transformations import rot_x, rot_z, translation
+from mocca.transformations import rot_x, rot_y, rot_z, translation
 
 
 @runtime_checkable
@@ -54,13 +54,13 @@ class EquatorialMount(Transformable):
         :param dec: declination in degrees
         :returns: aperture-to-dome transformation matrix
         """
-        H_01 = translation(0, 0, self.height)
+        H_01 = translation(0.0, 0.0, self.height)
         H_12 = (
-            rot_x(90 - self.latitude)
+            rot_x(90.0 - self.latitude)
             @ rot_z(-ha)
-            @ translation(0, 0, self.ha_axis_offset)
+            @ translation(0.0, 0.0, self.ha_axis_offset)
         )
-        H_23 = rot_x(dec) @ translation(-self.dec_axis_offset, 0, 0)
+        H_23 = rot_x(dec) @ translation(-self.dec_axis_offset, 0.0, 0.0)
 
         H = H_01 @ H_12 @ H_23
 
@@ -73,6 +73,9 @@ class EquatorialMount(Transformable):
             info.height, info.ha_axis_offset, info.dec_axis_offset, info.latitude
         )
 
+    def __repr__(self):
+        return f"EquatorialMount(height={self.height}, ha_axis_offset={self.ha_axis_offset}, dec_axis_offset={self.dec_axis_offset}, latitude={self.latitude})"
+
 
 class CompositeMount(Transformable):
     def __init__(self, base: Transformable, offset: float, angle: float):
@@ -82,7 +85,7 @@ class CompositeMount(Transformable):
 
         :param base: base mount
         :param offset: radial offset in the xz-plane
-        :param angle: angle of the rotation about the y-axis
+        :param angle: angle (deg) of the rotation about the y-axis
         """
         self.base_mount = base
         self.offset = offset
@@ -98,8 +101,25 @@ class CompositeMount(Transformable):
         :returns: aperture-to-dome transformation matrix
         """
         H_base = self.base_mount.transformation(ha, dec)
-        H_offset = translation(
-            self.offset * np.cos(self.angle), 0, self.offset * np.sin(self.angle)
+        H_offset_old = translation(
+            self.offset * np.cos(self.angle), 0.0, self.offset * np.sin(self.angle)
         )
+        H = H_base @ H_offset_old
+        print("OLD=\n", H, H[:3, 3])
+        # return H
 
-        return H_base @ H_offset
+        # THIS IS EQUAL TO THE OLD IMPLEMENTATION!!!
+        H_offset = rot_y(self.angle) @ translation(self.offset, 0.0, 0.0)
+        H = H_base @ H_offset
+        print("NEW?=\n", H, H[:3, 3])
+        # return H
+
+        # FIXME: THIS SHOULD BE THE CORRECT ONE
+        H_offset = rot_y(self.angle) @ translation(0.0, 0.0, self.offset)
+        H = H_base @ H_offset
+        print("NEW=\n", H, H[:3, 3])
+
+        return H
+
+    def __repr__(self):
+        return f"CompositeMount(base={self.base_mount}, offset={self.offset}, angle={self.angle})"

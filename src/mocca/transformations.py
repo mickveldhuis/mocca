@@ -59,7 +59,7 @@ def rot_y(angle: float) -> np.ndarray:
 
     return np.array(
         [
-            [np.cos(angle), 0, -np.sin(angle), 0],
+            [np.cos(angle), 0, np.sin(angle), 0],
             [0, 1, 0, 0],
             [-np.sin(angle), 0, np.cos(angle), 0],
             [0, 0, 0, 1],
