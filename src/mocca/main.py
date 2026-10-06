@@ -140,7 +140,7 @@ def main():
     )
 
     if blockage is not None:
-        aperture_id = aperture.identifier().capitalize()
+        aperture_id = args.aperture.capitalize()
         print(f"{aperture_id} aperture obstruction = {blockage:.2%}")
     else:
         raise RuntimeError("The % obstruction could not be computed")
