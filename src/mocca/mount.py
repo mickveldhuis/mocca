@@ -32,6 +32,14 @@ class EquatorialMount(Transformable):
         dec_axis_offset: float,
         latitude: float,
     ) -> None:
+        """
+        Create an Equatorial base mount for calculating the transformation
+        matrix from the dome frame to the telescope's optical axis.
+
+        :param height: distance from the floor to the HA axis
+        :param ha_axis_offset: distance from the HA axis to the intersection with the Dec axis
+        :param dec_axis_offset: distance from HA-Dec axis intersection to the optical axis
+        """
         self.height = height
         self.ha_axis_offset = ha_axis_offset
         self.dec_axis_offset = dec_axis_offset
@@ -68,6 +76,14 @@ class EquatorialMount(Transformable):
 
 class CompositeMount(Transformable):
     def __init__(self, base: Transformable, offset: float, angle: float):
+        """
+        Create a mount for an aperture with an offset respect to a base mount, e.g.
+        to model a finderscope on top of the telescope on an equatorial mount.
+
+        :param base: base mount
+        :param offset: radial offset in the xz-plane
+        :param angle: angle of the rotation about the y-axis
+        """
         self.base_mount = base
         self.offset = offset
         self.angle = angle
