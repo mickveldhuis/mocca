@@ -27,4 +27,5 @@ build-backend = "uv_build"
 dev = [
   "pre-commit",
   "py-spy",
+  "pytest>=9.1.1",
 ]
