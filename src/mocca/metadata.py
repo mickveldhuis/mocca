@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
-import numpy as np
-
 
 @dataclass
 class TelescopeInfo:
@@ -39,8 +37,8 @@ class TelescopeInfo:
             )  # distance primary tube center-guider center
             L_5 = config["finder"].get("offset")  # distance guider center-finder center
 
-            guider_angle = np.radians(config["guider"].get("angle"))
-            finder_angle = np.radians(config["finder"].get("angle"))
+            guider_angle = config["guider"].get("angle")
+            finder_angle = config["finder"].get("angle")
 
             aperture_radius = config["telescope"].get("diameter") / 2
             aperture_sec_radius = config["telescope"].get("sec_diameter") / 2

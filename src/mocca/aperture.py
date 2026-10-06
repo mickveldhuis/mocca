@@ -32,13 +32,12 @@ def create_aperture(
                 rate=rate,
             )
         case "finder":
-            # H_34 = translation(L_4 * np.cos(guider_angle), 0, L_4 * np.sin(guider_angle))
-            # H_45 = translation(-L_5 * np.cos(finder_angle), 0, L_5 * np.sin(finder_angle))
             guider_mount = CompositeMount(
                 mount, telescope_info.guider_offset, telescope_info.guider_angle
             )
+            finder_angle = -90  # TODO: document magic number
             finder_mount = CompositeMount(
-                guider_mount, telescope_info.finder_offset, telescope_info.finder_angle
+                guider_mount, telescope_info.finder_offset, finder_angle
             )
             return Aperture(
                 finder_mount,

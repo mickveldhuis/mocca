@@ -101,25 +101,10 @@ class CompositeMount(Transformable):
         :returns: aperture-to-dome transformation matrix
         """
         H_base = self.base_mount.transformation(ha, dec)
-        H_offset_old = translation(
-            self.offset * np.cos(self.angle), 0.0, self.offset * np.sin(self.angle)
-        )
-        H = H_base @ H_offset_old
-        print("OLD=\n", H, H[:3, 3])
-        # return H
 
-        # THIS IS EQUAL TO THE OLD IMPLEMENTATION!!!
-        H_offset = rot_y(self.angle) @ translation(self.offset, 0.0, 0.0)
-        H = H_base @ H_offset
-        print("NEW?=\n", H, H[:3, 3])
-        # return H
-
-        # FIXME: THIS SHOULD BE THE CORRECT ONE
         H_offset = rot_y(self.angle) @ translation(0.0, 0.0, self.offset)
-        H = H_base @ H_offset
-        print("NEW=\n", H, H[:3, 3])
 
-        return H
+        return H_base @ H_offset
 
     def __repr__(self):
         return f"CompositeMount(base={self.base_mount}, offset={self.offset}, angle={self.angle})"
