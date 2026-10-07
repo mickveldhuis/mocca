@@ -3,7 +3,6 @@ from pytransform3d import transformations as pt
 
 from mocca.metadata import TelescopeInfo
 from mocca.mount import CompositeMount, EquatorialMount, Transformable
-from mocca.transformations import translation, vec3, vec4
 from mocca.utils import sample_unit_disk
 
 
@@ -95,15 +94,13 @@ class Aperture:
         :param dec: declination in degrees
         :returns: pointing vector in the dome frame
         """
-        H_ap = self.transformation(ha, dec)
-        H_unit = translation(0, 1, 0)
+        H_aperture = self.transformation(ha, dec)
 
-        H_diff = H_ap @ H_unit - H_ap
+        # The aperture points along the +y axis, which is
+        # the 2nd component of the transformation matrix.
+        direction = H_aperture[:3, 1]
 
-        aperture_origin = vec4(0, 0, 0)
-        direction = H_diff @ aperture_origin
-
-        return vec3(direction)
+        return direction
 
     def sample(self, ha: float, dec: float) -> np.ndarray:
         """
