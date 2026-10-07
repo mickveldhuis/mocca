@@ -1,11 +1,7 @@
-from importlib.util import find_spec
-from pathlib import Path
-
 import numpy as np
 import pytest
 
 from mocca.aperture import create_aperture
-from mocca.main import MOCCA_CONFIG
 from mocca.metadata import TelescopeInfo
 from mocca.transformations import rot_x, rot_y, rot_z, translation
 
@@ -15,17 +11,6 @@ SUPPORTED_APERTURES = ["telescope", "guider", "finder"]
 # Use a constant HA and declination for this test-suite
 HA = -15.0  # degrees
 DEC = -35.0  # degrees
-
-
-@pytest.fixture
-def telescope_info():
-    mocca_src = Path(find_spec("mocca").origin).parent
-    config_path = mocca_src / MOCCA_CONFIG
-
-    if not config_path.exists():
-        pytest.skip(f"MOCCA configuration file not found at {config_path.resolve()}")
-
-    return TelescopeInfo.from_file(config_path)
 
 
 @pytest.fixture

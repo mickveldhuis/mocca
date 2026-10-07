@@ -1,0 +1,31 @@
+import numpy as np
+import pytest
+
+from mocca.aperture import create_aperture
+from mocca.obstruction import calculate_obstruction
+
+TEST_RATE = 4
+
+
+@pytest.mark.parametrize(
+    "ha,dec,az,percentage",
+    [
+        (150.0, 90.0, 10.0, 3.42),
+        (
+            -7.5,
+            -35,
+            180.0,
+            46.15,
+        ),  # TODO: validate since the previously reported value was 53%, though some of the transformations have been corrected in a recent update, so the old percentage may've been wrong
+    ],
+)
+def test_primary_aperture_obstruction(
+    telescope_info, dome_info, ha, dec, az, percentage
+):
+    """Check the calculated primary aperture obstruction against know simulated values."""
+    aperture_type = "telescope"  # primary aperture identifier
+    aperture = create_aperture(aperture_type, TEST_RATE, telescope_info)
+
+    blockage, _ = calculate_obstruction(az, ha, dec, aperture, dome_info)
+
+    assert np.isclose(blockage, percentage / 1e2, rtol=1e-3)
