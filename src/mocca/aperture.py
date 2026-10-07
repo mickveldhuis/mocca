@@ -10,7 +10,14 @@ from mocca.utils import sample_unit_disk
 def create_aperture(
     aperture_type: str, rate: int, telescope_info: TelescopeInfo
 ) -> Aperture:
-    """Factory method for creating an Aperture instance."""
+    """
+    Factory method for creating an Aperture instance.
+
+    :param aperture_type: string indicating the type of apeture (currently supported: telescope, guider, and finder)
+    :param rate: number of radial circles to sample the aperture
+    :param telescope_info: telescope metadata used to construct the telescope and mount
+    :returns: one of the three available apertures
+    """
     mount = EquatorialMount.from_telescope_info(telescope_info)
 
     match aperture_type:

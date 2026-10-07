@@ -84,7 +84,7 @@ class CompositeMount(Transformable):
         to model a finderscope on top of the telescope on an equatorial mount.
 
         :param base: base mount
-        :param offset: radial offset in the xz-plane
+        :param offset: offset along the z-axis
         :param angle: angle (deg) of the rotation about the y-axis
         """
         self.base_mount = base
