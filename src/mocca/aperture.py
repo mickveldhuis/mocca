@@ -41,7 +41,7 @@ def create_aperture(
             guider_mount = CompositeMount(
                 mount, telescope_info.guider_offset, telescope_info.guider_angle
             )
-            finder_angle = -90  # TODO: document magic number
+            finder_angle = -90  # back rotate to the finderscope's frame, which is fixed to the autoguider at a right angle
             finder_mount = CompositeMount(
                 guider_mount, telescope_info.finder_offset, finder_angle
             )
