@@ -18,8 +18,11 @@ def vec3(v4: np.ndarray) -> np.ndarray:
     return v3
 
 
-def transform(x: float, y: float, z: float) -> np.ndarray:
-    """Transform a vector (x', y', z', 1)."""
+def translation(x: float, y: float, z: float) -> np.ndarray:
+    """
+    Translate a vector (x', y', z', 1) by x,
+    y, and z along their respective axes.
+    """
     return np.array(
         [
             [1, 0, 0, x],
@@ -56,7 +59,7 @@ def rot_y(angle: float) -> np.ndarray:
 
     return np.array(
         [
-            [np.cos(angle), 0, -np.sin(angle), 0],
+            [np.cos(angle), 0, np.sin(angle), 0],
             [0, 1, 0, 0],
             [-np.sin(angle), 0, np.cos(angle), 0],
             [0, 0, 0, 1],

@@ -2,21 +2,55 @@ import numpy as np
 from pytransform3d import transformations as pt
 
 from mocca.metadata import TelescopeInfo
-from mocca.transformations import rot_x, rot_z, transform, vec3, vec4
+from mocca.mount import CompositeMount, EquatorialMount, Transformable
 from mocca.utils import sample_unit_disk
 
 
 def create_aperture(
     aperture_type: str, rate: int, telescope_info: TelescopeInfo
 ) -> Aperture:
-    """Factory method for creating an Aperture instance."""
+    """
+    Factory method for creating an Aperture instance.
+
+    :param aperture_type: string indicating the type of apeture (currently supported: telescope, guider, and finder)
+    :param rate: number of radial circles to sample the aperture
+    :param telescope_info: telescope metadata used to construct the telescope and mount
+    :returns: one of the three available apertures
+    """
+    mount = EquatorialMount.from_telescope_info(telescope_info)
+
     match aperture_type:
         case "telescope":
-            return TelescopeAperture(telescope_info, rate=rate)
+            return Aperture(
+                mount,
+                telescope_info.aperture_radius,
+                sec_radius=telescope_info.aperture_sec_radius,
+                rate=rate,
+            )
         case "guider":
-            return GuiderAperture(telescope_info, rate=rate)
+            guider_mount = CompositeMount(
+                mount, telescope_info.guider_offset, telescope_info.guider_angle
+            )
+            return Aperture(
+                guider_mount,
+                telescope_info.guider_radius,
+                sec_radius=telescope_info.guider_sec_radius,
+                rate=rate,
+            )
         case "finder":
-            return FinderAperture(telescope_info, rate=rate)
+            guider_mount = CompositeMount(
+                mount, telescope_info.guider_offset, telescope_info.guider_angle
+            )
+            finder_angle = -90  # back rotate to the finderscope's frame, which is fixed to the autoguider at a right angle
+            finder_mount = CompositeMount(
+                guider_mount, telescope_info.finder_offset, finder_angle
+            )
+            return Aperture(
+                finder_mount,
+                telescope_info.finder_radius,
+                sec_radius=0.0,
+                rate=rate,
+            )
         case _:
             raise ValueError("Unknown aperture type")
 
@@ -25,7 +59,7 @@ class Aperture:
     """Class representing the telescope aperture."""
 
     def __init__(
-        self, info: TelescopeInfo, radius: float, sec_radius: float = 0, rate: int = 3
+        self, mount: Transformable, radius: float, sec_radius: float = 0, rate: int = 3
     ) -> None:
         """
         Construct a telescope aperture.
@@ -35,35 +69,36 @@ class Aperture:
         :param rate: aperture sample rate (in terms of the number of radial circles around the center)
         :param info: metadata object with the telescope's geometrical properties
         """
+        self.mount = mount
         self.radius = radius
         self.sec_radius = sec_radius
         self.sample_rate = rate
 
-        self.info = info
-
-        self._id = None
-
     def transformation(self, ha: float, dec: float) -> np.ndarray:
         """
-        Calculate the transformation matrix from
-        the aperture to the dome frame.
+        Calculate the transformation matrix from the aperture
+        to the dome frame using the appropriate mount.
 
         :param ha: hour angle in degrees
         :param dec: declination in degrees
         :returns: aperture-to-dome transformation matrix
         """
-        L_1 = self.info.height
-        L_2 = self.info.ha_axis_offset
-        L_3 = self.info.dec_axis_offset
-        lat = self.info.latitude
+        return self.mount.transformation(ha, dec)
 
-        H_01 = transform(0, 0, L_1)
-        H_12 = rot_x(90 - lat) @ rot_z(-ha) @ transform(0, 0, L_2)
-        H_23 = rot_x(dec) @ transform(-L_3, 0, 0)
+    def origin(self, ha, dec):
+        """
+        Return the origin of the aperture in the dome
+        frame.
 
-        H = H_01 @ H_12 @ H_23
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
+        :returns: origin 3-vector in the dome frame
+        """
+        aperture_transformation = self.transformation(ha, dec)
 
-        return H
+        # The origin is equal to the 4th column of the
+        # transformation matrix.
+        return aperture_transformation[:3, 3]
 
     def direction(self, ha: float, dec: float) -> np.ndarray:
         """
@@ -74,14 +109,11 @@ class Aperture:
         :param dec: declination in degrees
         :returns: pointing vector in the dome frame
         """
-        H_ap = self.transformation(ha, dec)
-        H_unit = transform(0, 1, 0)
+        aperture_transformation = self.transformation(ha, dec)
 
-        H_diff = H_ap @ H_unit - H_ap
-
-        direction = H_diff @ vec4(0, 0, 0)
-
-        return vec3(direction)
+        # The aperture points along the +y axis, which is
+        # the 2nd component of the transformation matrix.
+        return aperture_transformation[:3, 1]
 
     def sample(self, ha: float, dec: float) -> np.ndarray:
         """
@@ -111,77 +143,5 @@ class Aperture:
 
         return product[:, :3]
 
-    def identifier(self) -> str:
-        """Return aperture identifier."""
-        return self._id
-
-
-class TelescopeAperture(Aperture):
-    """Primary aperture."""
-
-    def __init__(self, info: TelescopeInfo, rate: int = 4) -> None:
-        super().__init__(
-            info,
-            info.aperture_radius,
-            sec_radius=info.aperture_sec_radius,
-            rate=rate,
-        )
-
-        self._id = "telescope"
-
-
-class GuiderAperture(Aperture):
-    """Autoguider aperture."""
-
-    def __init__(self, info: TelescopeInfo, rate: int = 3) -> None:
-        super().__init__(
-            info,
-            info.guider_radius,
-            sec_radius=info.guider_sec_radius,
-            rate=rate,
-        )
-
-        self._id = "guider"
-
-    def transformation(self, ha: float, dec: float) -> np.ndarray:
-        # Get the telescope aperture pose
-        H_telescope = super().transformation(ha, dec)
-
-        # Get aperture geometry
-        L_4 = self.info.guider_offset
-        angle = self.info.guider_angle
-
-        # Transform telescope aperture to guider aperture
-        H_34 = transform(L_4 * np.cos(angle), 0, L_4 * np.sin(angle))
-
-        H = H_telescope @ H_34
-
-        return H
-
-
-class FinderAperture(Aperture):
-    """Finderscope aperture."""
-
-    def __init__(self, info: TelescopeInfo, rate: int = 3) -> None:
-        super().__init__(info, info.finder_radius, rate=rate)
-
-        self._id = "finder"
-
-    def transformation(self, ha: float, dec: float) -> np.ndarray:
-        # Get the telescope aperture pose
-        H_telescope = super().transformation(ha, dec)
-
-        # Get aperture geometry
-        L_4 = self.info.guider_offset
-        L_5 = self.info.finder_offset
-
-        guider_angle = self.info.guider_angle
-        finder_angle = self.info.finder_angle
-
-        # Transform telescope aperture to guider aperture & guider to finder
-        H_34 = transform(L_4 * np.cos(guider_angle), 0, L_4 * np.sin(guider_angle))
-        H_45 = transform(-L_5 * np.cos(finder_angle), 0, L_5 * np.sin(finder_angle))
-
-        H = H_telescope @ H_34 @ H_45
-
-        return H
+    def __repr__(self):
+        return f"Aperture(mount={self.mount}, radius={self.radius}, sec_radius={self.sec_radius}, rate={self.sample_rate})"
