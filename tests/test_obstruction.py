@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from mocca.aperture import create_aperture
-from mocca.obstruction import calculate_obstruction
+from mocca.obstruction import calculate_obstruction, find_ray_dome_intersection
 
 TEST_RATE = 4
 
@@ -26,3 +26,17 @@ def test_primary_aperture_obstruction(
     blockage, _ = calculate_obstruction(az, ha, dec, aperture, dome_info)
 
     assert np.isclose(blockage, percentage / 1e2, rtol=1e-3)
+
+
+def test_ray_dome_intersection():
+    origin = np.array([0.0, 0.0, 0.0])
+    direction = np.array([0.0, 0.0, 1.0])
+
+    radius = 1.0
+    extent = 1.0
+
+    intersection = find_ray_dome_intersection(origin, direction, radius, extent)
+
+    expected_height = 2.0
+    assert np.allclose(intersection[:2], [0.0, 0.0])
+    assert np.isclose(np.linalg.norm(intersection), expected_height)
