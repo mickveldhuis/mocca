@@ -1,6 +1,41 @@
+from dataclasses import dataclass
+
 import numpy as np
+import pytest
 
 from mocca.mount import CompositeMount, EquatorialMount, Transformable
+
+EQUATOR_DEC = 0.0
+EQUATOR_DIRECTION = [0.0, 1.0, 0.0]
+
+NCP_DEC = 90.0
+NCP_DIRECTION = [0.0, 0.0, 1.0]
+
+
+@dataclass
+class MockEquatorialMount:
+    """
+    Mock equatorial mount parameters; assume
+    a mount at the north pole by default.
+    """
+
+    height: float = 1.0
+    ha_axis_offset: float = 1.0
+    dec_axis_offset: float = 1.0
+    latitude: float = 90.0  # north pole
+
+
+@pytest.fixture
+def north_pole_mount():
+    """
+    Return an EquatorialMount instance
+    for a mount at the north pole.
+    """
+    mount = MockEquatorialMount()
+
+    return EquatorialMount(
+        mount.height, mount.ha_axis_offset, mount.dec_axis_offset, mount.latitude
+    )
 
 
 def validate_position_vector(
@@ -27,102 +62,93 @@ def validate_direction_vector(transformation_matrix, expected_vector):
     assert np.allclose(direction_vector, expected_vector)
 
 
-def validate_position_and_direction_for_constant_hour_angle(
-    mount: Transformable, expected_position: np.ndarray
+def validate_position_and_direction_vectors(
+    mount: Transformable,
+    expected_position: np.ndarray,
+    expected_direction: np.ndarray,
+    ha: float = 0.0,
+    dec: float = 0.0,
 ):
     """
-    Validate the mount's transformation matrices for constant
-    hour angle, which implies a constant position inside of
-    the telescope inside of the dome frame.
+    Validate the mount's transformation matrices by comparing the origin
+    position of the frame and the pointing direction vectors.
     """
-    constant_ha = 0.0
-
-    # Point the telescope parallel to the celestial equator
-    dec_equator = 0.0
-    transformation = mount.transformation(constant_ha, dec_equator)
+    transformation = mount.transformation(ha, dec)
 
     validate_position_vector(transformation, expected_position)
 
-    expected_direction = [0.0, 1.0, 0.0]  # along dome y-axis
-    validate_direction_vector(transformation, expected_direction)
-
-    # Point the the telescope along the yz-axis in the dome frame
-    dec = 45.0
-    transformation = mount.transformation(constant_ha, dec)
-
-    validate_position_vector(transformation, expected_position)
-
-    expected_direction = [0.0, np.sqrt(2.0) / 2, np.sqrt(2.0) / 2]
-    validate_direction_vector(transformation, expected_direction)
-
-    # Point the the telescope to the north celestial pole
-    dec_ncp = 90.0
-    transformation = mount.transformation(constant_ha, dec_ncp)
-
-    validate_position_vector(transformation, expected_position)
-
-    expected_direction = [0.0, 0.0, 1.0]  # along dome z-axis
     validate_direction_vector(transformation, expected_direction)
 
 
-def test_equatorial_mount():
+@pytest.mark.parametrize(
+    "dec,direction",
+    [
+        (EQUATOR_DEC, EQUATOR_DIRECTION),
+        (
+            45.0,
+            [0.0, np.sqrt(2.0) / 2, np.sqrt(2.0) / 2],
+        ),  # point along the yz-axis in the dome frame
+        (NCP_DEC, NCP_DIRECTION),
+    ],
+)
+def test_equatorial_mount(north_pole_mount, dec, direction):
     """
-    Check whether the EquatorialMount creates correct transformation matrices
-    by varying the declination. To simplify the calculations, we consider a
-    constant (zero) HA and a telescope at the north pole.
+    Check whether the EquatorialMount creates correct transformation
+    matrices by varying the declination.
+
+    To simplify the calculations, we consider a constant
+    (zero) HA and a telescope at the north pole.
     """
-    height = 1.0
-    ha_axis_offset = 1.0
-    dec_axis_offset = 1.0
-    latitude = 90  # north pole
-    mount = EquatorialMount(height, ha_axis_offset, dec_axis_offset, latitude)
+    expected_position = [
+        -north_pole_mount.dec_axis_offset,
+        0.0,
+        north_pole_mount.height + north_pole_mount.ha_axis_offset,
+    ]
 
-    # Consider a constant (zero) hour angle
-    expected_position = [-dec_axis_offset, 0.0, height + ha_axis_offset]
-    validate_position_and_direction_for_constant_hour_angle(mount, expected_position)
+    validate_position_and_direction_vectors(
+        north_pole_mount, expected_position, direction, dec=dec
+    )
 
 
-def test_composite_mount_without_angle():
+@pytest.mark.parametrize(
+    "dec,direction,position",
+    [
+        (EQUATOR_DEC, EQUATOR_DIRECTION, [-1.0, 0.0, 3.0]),
+        (NCP_DEC, NCP_DIRECTION, [-1.0, -1.0, 2.0]),
+    ],
+)
+def test_composite_mount_without_angle(north_pole_mount, dec, direction, position):
     """
-    Check whether the CompositeMont creates correct transformation matrices
-    by varying the declination. To simplify the calculations, we consider a
-    constant (zero) HA and a telescope at the north pole.
-    """
-    # Construct the equatorial mount base
-    height = 1.0
-    ha_axis_offset = 1.0
-    dec_axis_offset = 1.0
-    latitude = 90  # north pole
-    base_mount = EquatorialMount(height, ha_axis_offset, dec_axis_offset, latitude)
+    Check whether the CompositeMount creates correct transformation
+    matrices by varying the declination.
 
-    # Add an offset mount, without considering an angular offset
+    To simplify the calculations, we consider a constant
+    (zero) HA and a telescope at the north pole.
+    """
     offset = 1.0
     angle = 0.0
-    mount = CompositeMount(base_mount, offset, angle)
+    mount = CompositeMount(north_pole_mount, offset, angle)
 
-    # Consider a constant (zero) hour angle
-    expected_position = [-dec_axis_offset + offset, 0.0, height + ha_axis_offset]
-    validate_position_and_direction_for_constant_hour_angle(mount, expected_position)
+    validate_position_and_direction_vectors(mount, position, direction, dec=dec)
 
 
-def test_composite_mount_with_angle():
+@pytest.mark.parametrize(
+    "dec,direction,position",
+    [
+        (EQUATOR_DEC, EQUATOR_DIRECTION, [-1.0, 0.0, 1.0]),
+        (NCP_DEC, NCP_DIRECTION, [-1.0, 1.0, 2.0]),
+    ],
+)
+def test_composite_mount_with_angle(north_pole_mount, dec, direction, position):
     """
-    Check whether the CompositeMont (with non-zero angular offset) creates correct
-    transformation matrices by varying the declination. To simplify the calculations,
-    we consider a constant (zero) HA and a telescope at the north pole.
-    """
-    # Construct the equatorial mount base
-    height = 1.0
-    ha_axis_offset = 1.0
-    dec_axis_offset = 1.0
-    latitude = 90  # north pole
-    base_mount = EquatorialMount(height, ha_axis_offset, dec_axis_offset, latitude)
+    Check whether the CompositeMount creates correct transformation
+    matrices by varying the declination.
 
-    # Add an offset mount, without considering an angular offset
+    To simplify the calculations, we consider a constant
+    (zero) HA and a telescope at the north pole.
+    """
     offset = 1.0
-    angle = 90.0
-    mount = CompositeMount(base_mount, offset, angle)
+    angle = 180
+    mount = CompositeMount(north_pole_mount, offset, angle)
 
-    # Consider a constant (zero) hour angle
-    expected_position = [-dec_axis_offset - offset, 0.0, height + ha_axis_offset]
-    validate_position_and_direction_for_constant_hour_angle(mount, expected_position)
+    validate_position_and_direction_vectors(mount, position, direction, dec=dec)
