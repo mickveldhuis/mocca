@@ -114,15 +114,14 @@ def validate_aperture_origin_and_direction(
     """
     dummy_rate = 1  # not used in this test
     aperture = create_aperture(aperture_type, dummy_rate, telescope_info)
-    transformation = aperture.transformation(ha, dec)
 
-    aperture_origin = transformation[:3, 3]
+    aperture_origin = aperture.origin(ha, dec)
     expected_origin = reference_transformation[:3, 3]
     assert np.allclose(aperture_origin, expected_origin)
 
-    direction = aperture.direction(ha, dec)
+    aperture_direction = aperture.direction(ha, dec)
     expected_direction = reference_transformation[:3, 1]
-    assert np.allclose(direction, expected_direction)
+    assert np.allclose(aperture_direction, expected_direction)
 
 
 @pytest.mark.parametrize("aperture_type", SUPPORTED_APERTURES)

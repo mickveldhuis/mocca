@@ -85,6 +85,21 @@ class Aperture:
         """
         return self.mount.transformation(ha, dec)
 
+    def origin(self, ha, dec):
+        """
+        Return the origin of the aperture in the dome
+        frame.
+
+        :param ha: hour angle in degrees
+        :param dec: declination in degrees
+        :returns: origin 3-vector in the dome frame
+        """
+        aperture_transformation = self.transformation(ha, dec)
+
+        # The origin is equal to the 4th column of the
+        # transformation matrix.
+        return aperture_transformation[:3, 3]
+
     def direction(self, ha: float, dec: float) -> np.ndarray:
         """
         Return the pointing direction of the aperture
@@ -94,13 +109,11 @@ class Aperture:
         :param dec: declination in degrees
         :returns: pointing vector in the dome frame
         """
-        H_aperture = self.transformation(ha, dec)
+        aperture_transformation = self.transformation(ha, dec)
 
         # The aperture points along the +y axis, which is
         # the 2nd component of the transformation matrix.
-        direction = H_aperture[:3, 1]
-
-        return direction
+        return aperture_transformation[:3, 1]
 
     def sample(self, ha: float, dec: float) -> np.ndarray:
         """
