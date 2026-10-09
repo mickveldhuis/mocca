@@ -1,4 +1,5 @@
 import tomllib
+from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
@@ -89,3 +90,7 @@ class DomeInfo:
             slit_width = config["dome"].get("slit_width")  # Slit width
 
             return cls(radius, extent, slit_width)
+
+
+# Type to store the immutable result of the obstruction calculation.
+ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])

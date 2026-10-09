@@ -3,8 +3,8 @@ from typing import Protocol, Self, runtime_checkable
 
 import numpy as np
 
-from mocca.metadata import TelescopeInfo
 from mocca.transformations import rot_x, rot_y, rot_z, translation
+from mocca.types import TelescopeInfo
 
 
 @runtime_checkable

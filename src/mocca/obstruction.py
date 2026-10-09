@@ -2,12 +2,9 @@ import numpy as np
 from pytransform3d import transformations as pt
 
 from mocca.aperture import Aperture
-from mocca.metadata import DomeInfo
 from mocca.raytracing import find_ray_dome_intersection
 from mocca.transformations import rot_z
-
-# TODO: Convert to NamedTuple
-ObstructionResult = tuple[float, np.ndarray]
+from mocca.types import DomeInfo, ObstructionResult
 
 
 def aperture_obstruction_condition(
@@ -131,6 +128,4 @@ def calculate_obstruction(
 
     blocked = check_obstruction(ray_origins, pointing, dome_az, info)
 
-    ratio = blocked.mean()
-
-    return ratio, blocked
+    return ObstructionResult(ratio=blocked.mean(), mask=blocked)

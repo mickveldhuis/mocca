@@ -2,8 +2,8 @@ import argparse
 from pathlib import Path
 
 from mocca.aperture import create_aperture
-from mocca.metadata import DomeInfo, TelescopeInfo
 from mocca.obstruction import calculate_obstruction
+from mocca.types import DomeInfo, TelescopeInfo
 from mocca.visualise import plot_aperture_obstruction
 
 MOCCA_CONFIG = "mocca.toml"
