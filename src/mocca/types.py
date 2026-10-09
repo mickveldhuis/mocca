@@ -92,5 +92,5 @@ class DomeInfo:
             return cls(radius, extent, slit_width)
 
 
-# Type to store the immutable result of the obstruction calculation.
+# Named tuple to immutably store the result of the obstruction calculation.
 ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])

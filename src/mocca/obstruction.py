@@ -25,10 +25,10 @@ def aperture_obstruction_condition(
     # The dome's slit extends past zenith, to correct for
     # this discrepancy, we add a fudge factor (15 degrees)
     # inferred by the dome of the Blaauw observatory.
-    r = dome_radius * np.sin(
+    r = -dome_radius * np.sin(
         np.radians(15)
     )  # TODO: move this fudge factor to DomeInfo.
-    y_condition = y < -r or y > dome_radius
+    y_condition = y < r or y > dome_radius
 
     return x_condition or y_condition
 
