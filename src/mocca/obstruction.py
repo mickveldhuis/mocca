@@ -3,86 +3,58 @@ from pytransform3d import transformations as pt
 
 from mocca.aperture import Aperture
 from mocca.metadata import DomeInfo
+from mocca.raytracing import find_ray_dome_intersection
 from mocca.transformations import rot_z
 
-
-def find_ray_dome_intersection(
-    origin: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
-) -> np.ndarray | None:
-    """
-    Find ray-dome intersection when the rays hit the hemispherical cap of the dome,
-    which, inlcuding the walls, is modelled as a capsule.
-
-    :param origin: ray origin (3-vector)
-    :param direction: ray unit direction vector
-    :returns: the intersection with the hemispherical cap, if found, else None
-    """
-
-    def calculate_hit(origin: np.ndarray, direction: np.ndarray, t: float):
-        return origin + t * direction
-
-    assert np.isclose(np.linalg.norm(direction), 1.0), "direction is not a unit vector"
-    assert np.linalg.norm(origin[:2]) < dome_radius, (
-        "origin vector is not inside of the dome"
-    )
-
-    # Unpack the origin and direction for clarity
-    x, y, z = origin
-    dx, dy, dz = direction
-
-    t = None
-    intersection = None
-
-    #  Case 1: the ray is parallel to the dome's z-axis
-    if np.isclose(dz, 1.0):
-        z_hemisphere_squared = dome_radius**2 - x**2 - y**2
-        if z_hemisphere_squared < 0.0:
-            return None
-
-        z_dome = dome_extent + np.sqrt(z_hemisphere_squared)
-        t = z_dome - z
-        intersection = calculate_hit(origin, direction, t)
-
-        return intersection
-
-    # Case 2: the ray is **not** parallel to the dome's z-axis, for which
-    # we first check
-    a2 = dx**2 + dy**2
-    a1 = x * dx + y * dy
-    a0 = x**2 + y**2 - dome_radius**2
-
-    delta = a1**2 - a0 * a2
-    if delta < 0.0:
-        return None
-
-    t = (-a1 + np.sqrt(delta)) / a2
-    _, _, z_hit = calculate_hit(origin, direction, t)
-
-    # Checking for intersections with the hemispherical cap of the dome
-    if z_hit > dome_extent:
-        a0 = x**2 + y**2 + (z - dome_extent) ** 2 - dome_radius**2
-        a1 = x * dx + y * dy + (z - dome_extent) * dz
-
-        delta = a1**2 - a0
-        if delta < 0.0:
-            return None
-
-        t = -a1 + np.sqrt(delta)
-        intersection = calculate_hit(origin, direction, t)
-
-    return intersection
+# TODO: Convert to NamedTuple
+ObstructionResult = tuple[float, np.ndarray]
 
 
 def aperture_obstruction_condition(
-    x: float, y: float, z: float, dome_radius: float, dome_slit_width: float
+    x: float, y: float, dome_radius: float, dome_slit_width: float
 ) -> bool:
+    """
+    Return whether the ray is blocked by the dome's opening slit.
+
+    :param x: x position of the ray intersection inside the dome frame
+    :param y: y position of the ray intersection inside the dome frame
+    :param dome_radius: radius of the dome in meters
+    :param dome_slit_width: width of the dome's opening in meters
+    :returns: whether the ray is blocked by the dome
+    """
     half_width = dome_slit_width / 2
     x_condition = x < -half_width or x > half_width
 
-    r = dome_radius * np.sin(np.radians(15))  # TODO: document this magic angle!
+    # The dome's slit extends past zenith, to correct for
+    # this discrepancy, we add a fudge factor (15 degrees)
+    # inferred by the dome of the Blaauw observatory.
+    r = dome_radius * np.sin(
+        np.radians(15)
+    )  # TODO: move this fudge factor to DomeInfo.
     y_condition = y < -r or y > dome_radius
 
     return x_condition or y_condition
+
+
+def correct_for_dome_rotation(position: np.ndarray, dome_az: float) -> np.ndarray:
+    """
+    Rotate the intersections points by the dome azimuth, such that we can
+    validate the obstruction condition assuming that the slit is parallel
+    to the x and y axes.
+
+    :param position: intersection position (3-vector)
+    :param dome_az: dome's azimuth angle in degrees
+    :returns: intersection positions corrected for the dome's rotation
+    """
+    az_corrected = (
+        dome_az - 180
+    ) % 360  # Correction assuming the azimuth is zero at the South
+    rot = rot_z(az_corrected)
+
+    homogeneous_position_vector = np.append(position, 1.0)
+    corrected_position = pt.transform(rot, homogeneous_position_vector)
+
+    return corrected_position[:3]
 
 
 @np.vectorize(signature="(p),(q),(),()->()")
@@ -92,47 +64,56 @@ def check_obstruction(
     """
     Checks whether an individual ray is blocked.
 
-    :param point: ray origin
-    :param ha: hour angle in degrees
-    :param dec: declination in degrees
+    :param point: ray origin (3-vector)
+    :param direction: ray direction (3-vector)
     :param dome_az: dome azimuth (clockwise convention)
     :param info: dome properties
     """
     is_blocked = True
 
-    dome_radius = info.dome_radius
-    dome_extent = info.dome_extent
-    dome_slit_width = info.dome_slit_width
+    dome_radius = info.radius
+    dome_extent = info.extent
+    dome_slit_width = info.slit_width
     intersection = find_ray_dome_intersection(
         point, direction, dome_radius, dome_extent
     )
 
     if intersection is not None:
-        az_corrected = (
-            dome_az - 180
-        ) % 360  # Correction assuming the azimuth is zero at the South
-        rot = rot_z(az_corrected)
-
-        dummy = np.ones(intersection[0].size)
-        pp = np.column_stack((intersection[0], intersection[1], intersection[2], dummy))
-
-        product = pt.transform(rot, pp)
-
-        r = dome_radius * np.sin(np.radians(15))  # TODO: document this magic angle!
-
-        x_cond = -dome_slit_width / 2 < product[:, 0] < dome_slit_width / 2
-        y_cond = -r < product[:, 1] < dome_radius
-
-        is_ray_in_slit = intersection[2] > dome_extent and x_cond and y_cond
-
-        is_blocked = not is_ray_in_slit
+        x, y, _ = correct_for_dome_rotation(intersection, dome_az)
+        is_blocked = aperture_obstruction_condition(x, y, dome_radius, dome_slit_width)
 
     return is_blocked
 
 
+def validate_ray_origins(origins: np.ndarray, dome_radius) -> None:
+    """
+    Check whether the rays are originating from inside the dome.
+
+    :param origins: vector of shape (N, 3) with sampled ray origin positions
+    :param dome_radius: radius of the hemispherical dome in meters
+    """
+    if origins.shape[0] == 0:
+        raise ValueError("zero ray origin positions")
+
+    offset_from_centre = np.linalg.norm(origins[:, :2], axis=1)
+    if np.any(offset_from_centre > dome_radius):
+        raise ValueError(
+            f"one or more of the rays are origination from outside the dome (with radius {dome_radius:.2f})"
+        )
+
+
+def validate_ray_direction(direction: np.ndarray) -> None:
+    """Check whether the direction vector is of unit length."""
+    length = np.linalg.norm(direction)
+    if not np.isclose(length, 1.0):
+        raise ValueError(
+            f"the ray's directon vector has length {length:.5f} != 1.0, but expecting a unit vector"
+        )
+
+
 def calculate_obstruction(
     dome_az: float, ha: float, dec: float, aperture: Aperture, info: DomeInfo
-) -> tuple[float, np.ndarray]:
+) -> ObstructionResult:
     """
     Compute the % obstruction of the aperture by the dome.
 
@@ -143,10 +124,13 @@ def calculate_obstruction(
     :param info: dome properties
     """
     ray_origins = aperture.sample(ha, dec)
+    validate_ray_origins(ray_origins, info.radius)
+
     pointing = aperture.direction(ha, dec)
+    validate_ray_direction(pointing)
 
     blocked = check_obstruction(ray_origins, pointing, dome_az, info)
 
-    ratio = blocked[blocked].size / blocked.size
+    ratio = blocked.mean()
 
     return ratio, blocked
