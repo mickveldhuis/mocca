@@ -59,6 +59,8 @@ def test_aperture_obstruction_condition(x, y, expected_value):
     slit_width = 2.0
 
     if expected_value:
+        # Checks whether a ray is correctly assessed as: BLOCKED
         assert aperture_obstruction_condition(x, y, radius, slit_width)
     else:
+        # Checks whether a ray is correctly assessed as: NOT BLOCKED
         assert not aperture_obstruction_condition(x, y, radius, slit_width)
