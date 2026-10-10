@@ -52,7 +52,6 @@ def find_ray_hemisphere_intersection(
     a1 = x * dx + y * dy + (z - dome_extent) * dz
 
     delta = a1**2 - a0
-    print(f"delta = {delta}")
     if delta < 0.0:
         return None
 
