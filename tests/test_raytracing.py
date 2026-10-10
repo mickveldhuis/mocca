@@ -64,10 +64,7 @@ def test_ray_hemisphere_intersection(origin, direction, expected_t):
     radius = 1.0
     extent = 1.0
 
-    print(np.linalg.norm(direction))
-
     t = find_ray_hemisphere_intersection(origin, direction, radius, extent)
-    print(t)
     if expected_t is None:
         assert t is None
     else:
