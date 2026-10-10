@@ -149,3 +149,45 @@ def calculate_obstruction(
     blocked_rays_mask = np.array(blocked_rays_list)
 
     return ObstructionResult(ratio=blocked_rays_mask.mean(), mask=blocked_rays_mask)
+
+
+def batch_calculate_obstruction(
+    ha: float, dec: float, dome_azimuths: np.ndarray, aperture: Aperture, info: DomeInfo
+) -> ObstructionResult:
+    """
+    Compute the % obstruction of the aperture by the dome.
+
+    :param dome_azimuths: array of dome azimuth angles (clockwise convention)
+    :param ha: hour angle in degrees
+    :param dec: declination in degrees
+    :param aperture: telescope aperture
+    :param info: dome properties
+    """
+    logger.info(
+        "sampling the aperture for an hour angle of %.2f and declination of %.2f",
+        ha,
+        dec,
+    )
+    ray_origins = aperture.sample(ha, dec)
+    validate_ray_origins(ray_origins, info.radius)
+
+    pointing = aperture.direction(ha, dec)
+    validate_ray_direction(pointing)
+
+    n_rays = ray_origins.shape[0]
+    logger.info(
+        "checking the obstruction at an azimuth angles between %.2f and %.2f degrees using %i rays",
+        dome_azimuths.min(),
+        dome_azimuths.max(),
+        n_rays,
+    )
+
+    # FIXME: invalid operation for an array of azimuth angles
+    # blocked_rays_list = [
+    #     check_obstruction(ray_origins[ray_index, :], pointing, dome_az, info)
+    #     for ray_index in range(n_rays)
+    # ]
+    # blocked_rays_mask = np.array(blocked_rays_list)
+
+    # return ObstructionResult(ratio=blocked_rays_mask.mean(), mask=blocked_rays_mask)
+    return ObstructionResult(ratio=None, mask=None)
