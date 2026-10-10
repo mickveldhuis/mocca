@@ -7,7 +7,7 @@ from mocca.obstruction import calculate_obstruction
 from mocca.types import DomeInfo, TelescopeInfo
 from mocca.visualise import plot_aperture_obstruction
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("MOCCA")
 
 
 MOCCA_CONFIG = "mocca.toml"
@@ -130,10 +130,10 @@ def parse_cli_arguments():
 
 
 def main():
-    # Configure logging
+    # Configure the logger
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        format="%(asctime)s %(name)s %(levelname)-8s %(message)s",
     )
 
     # Parse CLI arguments

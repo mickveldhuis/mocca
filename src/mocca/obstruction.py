@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 from pytransform3d import transformations as pt
 
@@ -5,6 +7,8 @@ from mocca.aperture import Aperture
 from mocca.raytracing import find_ray_dome_intersection
 from mocca.transformations import rot_z
 from mocca.types import DomeInfo, ObstructionResult
+
+logger = logging.getLogger("MOCCA")
 
 
 def aperture_obstruction_condition(
@@ -120,6 +124,11 @@ def calculate_obstruction(
     :param aperture: telescope aperture
     :param info: dome properties
     """
+    logger.info(
+        "sampling the aperture for an hour angle of %.2f and declination of %.2f",
+        ha,
+        dec,
+    )
     ray_origins = aperture.sample(ha, dec)
     validate_ray_origins(ray_origins, info.radius)
 
@@ -127,9 +136,16 @@ def calculate_obstruction(
     validate_ray_direction(pointing)
 
     n_rays = ray_origins.shape[0]
+    logger.info(
+        "checking the obstruction at an azimuth of %.2f degrees using %i rays",
+        dome_az,
+        n_rays,
+    )
+
     blocked_rays_list = [
         check_obstruction(ray_origins[ray_index, :], pointing, dome_az, info)
         for ray_index in range(n_rays)
     ]
     blocked_rays_mask = np.array(blocked_rays_list)
+
     return ObstructionResult(ratio=blocked_rays_mask.mean(), mask=blocked_rays_mask)
