@@ -25,7 +25,7 @@ def find_ray_cylinder_intersection(
     a0 = x**2 + y**2 - dome_radius**2
 
     delta = a1**2 - a0 * a2
-    if delta < 0.0:
+    if delta < 0.0 or np.isclose(a2, 0.0):
         return None
 
     t = (-a1 + np.sqrt(delta)) / a2
@@ -52,6 +52,7 @@ def find_ray_hemisphere_intersection(
     a1 = x * dx + y * dy + (z - dome_extent) * dz
 
     delta = a1**2 - a0
+    print(f"delta = {delta}")
     if delta < 0.0:
         return None
 

@@ -25,10 +25,10 @@ def aperture_obstruction_condition(
     # The dome's slit extends past zenith, to correct for
     # this discrepancy, we add a fudge factor (15 degrees)
     # inferred by the dome of the Blaauw observatory.
-    r = -dome_radius * np.sin(
+    slit_overshoot = dome_radius * np.sin(
         np.radians(15)
     )  # TODO: move this fudge factor to DomeInfo.
-    y_condition = y < r or y > dome_radius
+    y_condition = y < -slit_overshoot or y > dome_radius
 
     return x_condition or y_condition
 
@@ -38,6 +38,8 @@ def correct_for_dome_rotation(position: np.ndarray, dome_az: float) -> np.ndarra
     Rotate the intersections points by the dome azimuth, such that we can
     validate the obstruction condition assuming that the slit is parallel
     to the x and y axes.
+
+    We also assume that the azimuth is zero towards the South.
 
     :param position: intersection position (3-vector)
     :param dome_az: dome's azimuth angle in degrees
@@ -54,32 +56,30 @@ def correct_for_dome_rotation(position: np.ndarray, dome_az: float) -> np.ndarra
     return corrected_position[:3]
 
 
-# @np.vectorize(signature="(p),(q),(),()->()")
 def check_obstruction(
-    point: np.ndarray, direction: np.ndarray, dome_az: float, info: DomeInfo
-) -> np.ndarray:
+    origin: np.ndarray, direction: np.ndarray, azimuth: float, dome: DomeInfo
+) -> bool:
     """
     Checks whether an individual ray is blocked.
 
-    :param point: ray origin (3-vector)
+    :param origin: ray origin (3-vector)
     :param direction: ray direction (3-vector)
-    :param dome_az: dome azimuth (clockwise convention)
-    :param info: dome properties
+    :param azimuth: dome azimuth (clockwise convention)
+    :param dome: dome properties
     """
-    is_blocked = True
-
-    dome_radius = info.radius
-    dome_extent = info.extent
-    dome_slit_width = info.slit_width
     intersection = find_ray_dome_intersection(
-        point, direction, dome_radius, dome_extent
+        origin, direction, dome.radius, dome.extent
     )
+    if intersection is None:
+        # If there's no intersection with the hemispherical
+        # cap of the dome, the ray is definitely blocked.
+        return True
 
-    if intersection is not None:
-        x, y, _ = correct_for_dome_rotation(intersection, dome_az)
-        is_blocked = aperture_obstruction_condition(x, y, dome_radius, dome_slit_width)
-
-    return is_blocked
+    # TODO: for future update, where we compute the obstruction for multiple azimuth angles
+    # at the same time, note that we only need to recalculate the dome azimuth correction,
+    # while reusing the found dome intersections.
+    x, y, _ = correct_for_dome_rotation(intersection, azimuth)
+    return aperture_obstruction_condition(x, y, dome.radius, dome.slit_width)
 
 
 def validate_ray_origins(origins: np.ndarray, dome_radius) -> None:
@@ -127,8 +127,9 @@ def calculate_obstruction(
     validate_ray_direction(pointing)
 
     n_rays = ray_origins.shape[0]
-    blocked_rays_mask = np.full(n_rays, True)
-    for ray_index in range(n_rays):
-        blocked = check_obstruction(ray_origins[ray_index, :], pointing, dome_az, info)
-
-    return ObstructionResult(ratio=blocked.mean(), mask=blocked_rays_mask)
+    blocked_rays_list = [
+        check_obstruction(ray_origins[ray_index, :], pointing, dome_az, info)
+        for ray_index in range(n_rays)
+    ]
+    blocked_rays_mask = np.array(blocked_rays_list)
+    return ObstructionResult(ratio=blocked_rays_mask.mean(), mask=blocked_rays_mask)
