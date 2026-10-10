@@ -1,10 +1,14 @@
 import argparse
+import logging
 from pathlib import Path
 
 from mocca.aperture import create_aperture
 from mocca.obstruction import calculate_obstruction
 from mocca.types import DomeInfo, TelescopeInfo
 from mocca.visualise import plot_aperture_obstruction
+
+logger = logging.getLogger("MOCCA")
+
 
 MOCCA_CONFIG = "mocca.toml"
 
@@ -14,7 +18,9 @@ def load_or_create_config(config_filename: str | None) -> Path:
         user_config = Path(config_filename).resolve()
 
         if not user_config.exists():
-            print(f"Error: {user_config} does not exist.")
+            raise FileNotFoundError(
+                f"the provided MOCCA configuration file {user_config} does not exist"
+            )
 
         return user_config
 
@@ -23,8 +29,10 @@ def load_or_create_config(config_filename: str | None) -> Path:
     user_config = Path.cwd() / MOCCA_CONFIG
 
     if not user_config.exists():
-        print(
-            f"No configuration file called {MOCCA_CONFIG} found in the current working directory. Creating one at: {user_config}."
+        logger.warning(
+            "%s not found in the current working directory; creating one at: %s",
+            MOCCA_CONFIG,
+            user_config,
         )
 
         default_config = Path(__file__).parent / MOCCA_CONFIG
@@ -32,7 +40,7 @@ def load_or_create_config(config_filename: str | None) -> Path:
 
         # Check again whether the copying is succesful
         if not user_config.exists():
-            print(f"Error: could not copy {default_config} to {user_config}")
+            raise OSError(f"could not copy {default_config} to {user_config}")
 
     return user_config
 
@@ -40,7 +48,7 @@ def load_or_create_config(config_filename: str | None) -> Path:
 def parse_cli_arguments():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Compute the % obstruction of a telescope by a hemispherical dome. The telescope should be affixed to an equatorial mount.",
+        description="Compute the fractional obstruction of a telescope by a hemispherical dome. The telescope should be affixed to an equatorial mount.",
     )
 
     def azimuth(value):
@@ -122,12 +130,19 @@ def parse_cli_arguments():
 
 
 def main():
+    # Configure the logger
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(name)s %(levelname)-8s %(message)s",
+    )
+
+    # Parse CLI arguments
     args = parse_cli_arguments()
 
     # Load the telescope-dome configuration from the provided TOML file
     config_path = load_or_create_config(args.config)
 
-    print(f"Loading telescope and dome parameters from {config_path.resolve()}")
+    logger.info("loading telescope and dome parameters from %s", config_path.resolve())
     telescope_info = TelescopeInfo.from_file(config_path)
     dome_info = DomeInfo.from_file(config_path)
 
@@ -140,10 +155,9 @@ def main():
     )
 
     if blockage is not None:
-        aperture_id = args.aperture.capitalize()
-        print(f"{aperture_id} aperture obstruction = {blockage:.2%}")
+        logger.info("%s aperture obstruction = %.3f", args.aperture, blockage)
     else:
-        raise RuntimeError("The % obstruction could not be computed")
+        raise RuntimeError("The fractional obstruction could not be computed")
 
     if args.visualise:
         plot_aperture_obstruction(aperture, blocked_rays, args.az)
