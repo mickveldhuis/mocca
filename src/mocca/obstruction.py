@@ -54,7 +54,7 @@ def correct_for_dome_rotation(position: np.ndarray, dome_az: float) -> np.ndarra
     return corrected_position[:3]
 
 
-@np.vectorize(signature="(p),(q),(),()->()")
+# @np.vectorize(signature="(p),(q),(),()->()")
 def check_obstruction(
     point: np.ndarray, direction: np.ndarray, dome_az: float, info: DomeInfo
 ) -> np.ndarray:
@@ -95,7 +95,7 @@ def validate_ray_origins(origins: np.ndarray, dome_radius) -> None:
     offset_from_centre = np.linalg.norm(origins[:, :2], axis=1)
     if np.any(offset_from_centre > dome_radius):
         raise ValueError(
-            f"one or more of the rays are origination from outside the dome (with radius {dome_radius:.2f})"
+            f"one or more of the rays are originating from outside the dome (with radius {dome_radius:.2f})"
         )
 
 
@@ -104,7 +104,7 @@ def validate_ray_direction(direction: np.ndarray) -> None:
     length = np.linalg.norm(direction)
     if not np.isclose(length, 1.0):
         raise ValueError(
-            f"the ray's directon vector has length {length:.5f} != 1.0, but expecting a unit vector"
+            f"the ray's direction vector has length {length:.5f} != 1.0, but expecting a unit vector"
         )
 
 
@@ -126,6 +126,9 @@ def calculate_obstruction(
     pointing = aperture.direction(ha, dec)
     validate_ray_direction(pointing)
 
-    blocked = check_obstruction(ray_origins, pointing, dome_az, info)
+    n_rays = ray_origins.shape[0]
+    blocked_rays_mask = np.full(n_rays, True)
+    for ray_index in range(n_rays):
+        blocked = check_obstruction(ray_origins[ray_index, :], pointing, dome_az, info)
 
-    return ObstructionResult(ratio=blocked.mean(), mask=blocked)
+    return ObstructionResult(ratio=blocked.mean(), mask=blocked_rays_mask)

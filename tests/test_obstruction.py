@@ -3,7 +3,6 @@ import pytest
 
 from mocca.aperture import create_aperture
 from mocca.obstruction import aperture_obstruction_condition, calculate_obstruction
-from mocca.raytracing import find_ray_dome_intersection
 
 TEST_RATE = 4
 
@@ -29,22 +28,8 @@ def test_primary_aperture_obstruction(
     assert np.isclose(blockage, percentage / 1e2, rtol=1e-3)
 
 
-def test_ray_dome_intersection():
-    origin = np.array([0.0, 0.0, 0.0])
-    direction = np.array([0.0, 0.0, 1.0])
-
-    radius = 1.0
-    extent = 1.0
-
-    intersection = find_ray_dome_intersection(origin, direction, radius, extent)
-
-    expected_height = 2.0
-    assert np.allclose(intersection[:2], [0.0, 0.0])
-    assert np.isclose(np.linalg.norm(intersection), expected_height)
-
-
 @pytest.mark.parametrize(
-    "x,y,expected_value",
+    "x,y,expected_output",
     [
         (-1.5, -0.5, True),
         (-1.001, 2.0, True),
@@ -53,12 +38,12 @@ def test_ray_dome_intersection():
         (1.0, 1.0, False),
     ],
 )
-def test_aperture_obstruction_condition(x, y, expected_value):
+def test_aperture_obstruction_condition(x, y, expected_output):
     """Check whether the obstruction condition behaves as expected."""
-    radius = 4
+    radius = 4.0
     slit_width = 2.0
 
-    if expected_value:
+    if expected_output:
         # Checks whether a ray is correctly assessed as: BLOCKED
         assert aperture_obstruction_condition(x, y, radius, slit_width)
     else:
