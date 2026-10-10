@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 
 from mocca.aperture import create_aperture
-from mocca.metadata import TelescopeInfo
 from mocca.transformations import rot_x, rot_y, rot_z, translation
+from mocca.types import TelescopeInfo
 
 # Store all supported aperture types to parametrize tests
 SUPPORTED_APERTURES = ["telescope", "guider", "finder"]

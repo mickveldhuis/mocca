@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from mocca.main import MOCCA_CONFIG
-from mocca.metadata import DomeInfo, TelescopeInfo
+from mocca.types import DomeInfo, TelescopeInfo
 
 
 @pytest.fixture(scope="module")

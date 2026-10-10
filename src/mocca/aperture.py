@@ -1,8 +1,8 @@
 import numpy as np
 from pytransform3d import transformations as pt
 
-from mocca.metadata import TelescopeInfo
 from mocca.mount import CompositeMount, EquatorialMount, Transformable
+from mocca.types import TelescopeInfo
 from mocca.utils import sample_unit_disk
 
 

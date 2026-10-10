@@ -1,4 +1,5 @@
 import tomllib
+from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
@@ -75,9 +76,9 @@ class TelescopeInfo:
 class DomeInfo:
     """This class describes the geometry of a hemispherical dome."""
 
-    dome_radius: float  # dome radius in meters
-    dome_extent: float  # extent of the cylindrical dome wall in meters
-    dome_slit_width: float  # slit width in meters
+    radius: float  # dome radius in meters
+    extent: float  # extent of the cylindrical dome wall in meters
+    slit_width: float  # slit width in meters
 
     @classmethod
     def from_file(cls, path: Path) -> Self:
@@ -89,3 +90,7 @@ class DomeInfo:
             slit_width = config["dome"].get("slit_width")  # Slit width
 
             return cls(radius, extent, slit_width)
+
+
+# Named tuple to immutably store the result of the obstruction calculation.
+ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])
