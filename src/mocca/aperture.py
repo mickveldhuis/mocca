@@ -92,7 +92,7 @@ class Aperture:
 
         :param ha: hour angle in degrees
         :param dec: declination in degrees
-        :returns: origin 3-vector in the dome frame
+        :returns: origin vector in the dome frame (3,)
         """
         aperture_transformation = self.transformation(ha, dec)
 

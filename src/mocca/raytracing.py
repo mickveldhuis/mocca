@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def calculate_hit(origin: np.ndarray, direction: np.ndarray, t: float):
+def calculate_hit(origin: np.ndarray, direction: np.ndarray, t: float) -> np.ndarray:
     """Return the position of a hit, i.e. an intersection."""
     return origin + t * direction
 
@@ -12,7 +12,7 @@ def find_ray_cylinder_intersection(
     """
     Find a possible ray-wall intersection.
 
-    :param origin: ray origin (3-vector)
+    :param origin: ray origin (3,)
     :param direction: ray unit direction vector
     :param dome_radius: radius of the dome in meters
     :returns: the distance from the origin to the intersection, if found, else None
@@ -33,13 +33,42 @@ def find_ray_cylinder_intersection(
     return t
 
 
+def find_ray_cylinder_intersections(
+    origins: np.ndarray, directions: np.ndarray, dome_radius: float
+) -> float:
+    """
+    Find a possible ray-wall intersection for multiple origins.
+
+    :param origins: ray origin (N, 3)
+    :param directions: ray unit direction vector (N, 3)
+    :param dome_radius: radius of the dome in meters
+    :returns: the distances from the origin to the intersection
+    """
+    x, y, _ = origins.T
+    dx, dy, _ = directions.T
+
+    a2 = dx**2 + dy**2
+    a1 = x * dx + y * dy
+    a0 = x**2 + y**2 - dome_radius**2
+
+    delta = a1**2 - a0 * a2
+    safe_delta = np.where(delta < 0.0, np.nan, delta)
+
+    numerator = -a1 + np.sqrt(safe_delta)
+    t = np.divide(
+        numerator, a2, out=np.full_like(numerator, np.nan), where=~np.isclose(a2, 0.0)
+    )
+
+    return t
+
+
 def find_ray_hemisphere_intersection(
     origin: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
 ) -> float | None:
     """
     Find a possible ray-hemisphere intersection.
 
-    :param origin: ray origin (3-vector)
+    :param origin: ray origin (3,)
     :param direction: ray unit direction vector
     :param dome_radius: radius of the dome in meters
     :param dome_extent: height of the walls in meters
@@ -60,6 +89,32 @@ def find_ray_hemisphere_intersection(
     return t
 
 
+def find_ray_hemisphere_intersections(
+    origins: np.ndarray, directions: np.ndarray, dome_radius: float, dome_extent: float
+) -> float:
+    """
+    Find a possible ray-hemisphere intersection.
+
+    :param origins: ray origin (N, 3)
+    :param directions: ray unit direction vector (N, 3)
+    :param dome_radius: radius of the dome in meters
+    :param dome_extent: height of the walls in meters
+    :returns: the distances from the origin to the intersection
+    """
+    x, y, z = origins.T
+    dx, dy, dz = directions.T
+
+    a0 = x**2 + y**2 + (z - dome_extent) ** 2 - dome_radius**2
+    a1 = x * dx + y * dy + (z - dome_extent) * dz
+
+    delta = a1**2 - a0
+    safe_delta = np.where(delta < 0.0, np.nan, delta)
+
+    t = -a1 + np.sqrt(safe_delta)
+
+    return t
+
+
 def find_ray_dome_intersection(
     origin: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
 ) -> np.ndarray | None:
@@ -67,7 +122,7 @@ def find_ray_dome_intersection(
     Find ray-dome intersection when the rays hit the hemispherical cap of the dome,
     which, inlcuding the walls, is modelled as a capsule.
 
-    :param origin: ray origin (3-vector)
+    :param origin: ray origin (3,)
     :param direction: ray unit direction vector
     :param dome_radius: radius of the dome in meters
     :param dome_extent: height of the walls in meters
@@ -104,3 +159,52 @@ def find_ray_dome_intersection(
             return calculate_hit(origin, direction, t)
 
     return None
+
+
+def find_ray_dome_intersections(
+    origins: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
+) -> np.ndarray:
+    """
+    Find ray-dome intersection when the rays hit the hemispherical cap of the dome,
+    which, inlcuding the walls, is modelled as a capsule.
+
+    :param origins: ray origin (N, 3)
+    :param directions: ray unit direction vector (3,)
+    :param dome_radius: radius of the dome in meters
+    :param dome_extent: height of the walls in meters
+    :returns: the positions of the intersections with the hemispherical cap
+    """
+    # Special case: the ray is parallel to the dome's z-axis
+    _, _, dz = direction
+    if np.isclose(dz, 1.0):
+        x = origins[:, 0]
+        y = origins[:, 1]
+        z = origins[:, 2]
+
+        z_hemisphere_squared = dome_radius**2 - x**2 - y**2
+        safe_z_hemisphere_squared = np.where(
+            z_hemisphere_squared < 0.0, np.nan, z_hemisphere_squared
+        )
+
+        z_dome = dome_extent + np.sqrt(safe_z_hemisphere_squared)
+        t = z_dome - z
+    else:
+        # When the ray is **not** parallel to the dome's z-axis, we also check
+        # whether the rays hit the walls of the dome.
+        t_wall = find_ray_cylinder_intersections(
+            origins, np.broadcast_to(direction, origins.shape), dome_radius
+        )
+        t_dome = find_ray_hemisphere_intersections(
+            origins, direction, dome_radius, dome_extent
+        )
+
+        # Filter out rays that did not hit the hemispherical cap
+        z_hits = origins[:, 2] + t_wall * dz
+        has_hit_dome = z_hits > dome_extent
+
+        t = np.where(has_hit_dome, t_dome, np.nan)
+
+    # Disregard rays going against the pointing direction
+    t = np.where(t < 0.0, np.nan, t)
+
+    return origins + t[:, np.newaxis] * direction
