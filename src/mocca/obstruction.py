@@ -128,19 +128,24 @@ def batch_correct_for_dome_rotation(
     :param dome_azimuths: dome's azimuth angles in degrees
     :returns: intersection positions corrected for the dome's rotation
     """
-    corrected_azimuths = (
-        dome_azimuths - 180
-    ) % 360  # Correction assuming the azimuth is zero at the South
+    corrected_azimuths = np.radians(
+        (dome_azimuths - 180) % 360
+    )  # Correction assuming the azimuth is zero at the South
 
     c_az = np.cos(corrected_azimuths)
     s_az = np.sin(corrected_azimuths)
 
     x, y, z = position.T
 
-    corrected_x = x * c_az - y * s_az
-    corrected_y = x * s_az + y * c_az
+    corrected_x = (
+        c_az[:, np.newaxis] * x[np.newaxis, :] - s_az[:, np.newaxis] * y[np.newaxis, :]
+    )
+    corrected_y = (
+        s_az[:, np.newaxis] * x[np.newaxis, :] + c_az[:, np.newaxis] * y[np.newaxis, :]
+    )
 
-    corrected_position = np.column_stack([corrected_x, corrected_y, z])
+    broadcasted_z = np.broadcast_to(z[np.newaxis, :], corrected_x.shape)
+    corrected_position = np.stack([corrected_x, corrected_y, broadcasted_z], axis=2)
 
     return corrected_position
 
@@ -165,45 +170,57 @@ def check_obstruction(
         return True
 
     position = correct_for_dome_rotation(intersection, azimuth)
-    print(position)
     x, y, _ = position.T
 
     return aperture_obstruction_condition(x, y, dome.radius, dome.slit_width)
 
 
 def batch_check_obstruction(
-    origins: np.ndarray, direction: np.ndarray, azimuth: float, dome: DomeInfo
+    origins: np.ndarray, direction: np.ndarray, azimuths: np.ndarray, dome: DomeInfo
 ) -> bool:
     """
     Checks whether an individual ray is blocked.
 
     :param origin: ray origin (3,)
     :param direction: ray direction (3,)
-    :param azimuth: dome azimuth (clockwise convention)
+    :param azimuths: dome azimuth angles (clockwise convention)
     :param dome: dome properties
     """
     intersections = find_ray_dome_intersections(
         origins, direction, dome.radius, dome.extent
     )
 
-    # TODO: for future update, where we compute the obstruction for multiple azimuth angles
-    # at the same time, note that we only need to recalculate the dome azimuth correction,
-    # while reusing the found dome intersections.
-    positions = correct_for_dome_rotation(intersections, azimuth)
-    x, y, _ = positions.T
+    positions = batch_correct_for_dome_rotation(intersections, azimuths)
 
-    return batch_aperture_obstruction_condition(x, y, dome.radius, dome.slit_width)
+    x = positions[:, :, 0]
+    y = positions[:, :, 1]
+
+    n_azimuths = len(azimuths)
+    n_rays = origins.shape[0]
+    masks = np.full((n_azimuths, n_rays), True)
+
+    # Only calculate the obstruction condition for rays that intersect the dome
+    has_no_intersection = np.isnan(intersections).any(axis=1)
+    valid_rays = ~has_no_intersection
+
+    x_intersection = x[:, valid_rays]
+    y_intersection = y[:, valid_rays]
+    masks[:, valid_rays] = batch_aperture_obstruction_condition(
+        x_intersection, y_intersection, dome.radius, dome.slit_width
+    )
+
+    return masks
 
 
 def calculate_obstruction(
-    dome_az: float, ha: float, dec: float, aperture: Aperture, info: DomeInfo
+    ha: float, dec: float, dome_az: float, aperture: Aperture, info: DomeInfo
 ) -> ObstructionResult:
     """
     Compute the % obstruction of the aperture by the dome.
 
-    :param dome_az: dome azimuth (clockwise convention)
     :param ha: hour angle in degrees
     :param dec: declination in degrees
+    :param dome_az: dome azimuth (clockwise convention)
     :param aperture: telescope aperture
     :param info: dome properties
     """
@@ -240,9 +257,9 @@ def batch_calculate_obstruction(
     """
     Compute the % obstruction of the aperture by the dome.
 
-    :param dome_azimuths: array of dome azimuth angles (clockwise convention)
     :param ha: hour angle in degrees
     :param dec: declination in degrees
+    :param dome_azimuths: array of dome azimuth angles (clockwise convention)
     :param aperture: telescope aperture
     :param info: dome properties
     """
@@ -265,8 +282,7 @@ def batch_calculate_obstruction(
         n_rays,
     )
 
-    blocked_rays = batch_check_obstruction(ray_origins, pointing, dome_azimuths, info)
-    print(blocked_rays)
+    masks = batch_check_obstruction(ray_origins, pointing, dome_azimuths, info)
+    ratios = masks.mean(axis=1)
 
-    # return ObstructionResult(ratio=blocked_rays_mask.mean(), mask=blocked_rays_mask)
-    return ObstructionResult(ratio=None, mask=None)
+    return BatchObstructionResult(ratios=ratios, masks=masks, azimuths=dome_azimuths)

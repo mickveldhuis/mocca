@@ -151,7 +151,7 @@ def main():
 
     ha_deg = args.ha * 15
     blockage, blocked_rays = calculate_obstruction(
-        args.az, ha_deg, args.dec, aperture, dome_info
+        ha_deg, args.dec, args.az, aperture, dome_info
     )
 
     if blockage is not None:

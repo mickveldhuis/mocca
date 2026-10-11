@@ -101,5 +101,5 @@ ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])
 @dataclass
 class BatchObstructionResult:
     ratios: np.ndarray
-    mask: np.ndarray
+    masks: np.ndarray
     azimuths: np.ndarray
