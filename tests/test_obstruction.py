@@ -2,7 +2,11 @@ import numpy as np
 import pytest
 
 from mocca.aperture import create_aperture
-from mocca.obstruction import aperture_obstruction_condition, calculate_obstruction
+from mocca.obstruction import (
+    aperture_obstruction_condition,
+    batch_calculate_obstruction,
+    calculate_obstruction,
+)
 
 TEST_RATE = 4
 
@@ -26,6 +30,29 @@ def test_primary_aperture_obstruction(
     blockage, _ = calculate_obstruction(az, ha, dec, aperture, dome_info)
 
     assert np.isclose(blockage, percentage / 1e2, rtol=1e-3)
+
+
+@pytest.mark.parametrize(
+    "ha,dec,az",
+    [
+        (150.0, 90.0, 10.0),
+        (-7.5, -35, 180.0),
+    ],
+)
+def test_batch_obstruction_calculation(telescope_info, dome_info, ha, dec, az):
+    """Compare the batch calculation with the default the default implementation."""
+    aperture_type = "telescope"  # primary aperture identifier
+    aperture = create_aperture(aperture_type, TEST_RATE, telescope_info)
+
+    # The default (non-batch) implementation is used as reference
+    expected_blockage, _ = calculate_obstruction(az, ha, dec, aperture, dome_info)
+
+    batch_result = batch_calculate_obstruction(
+        ha, dec, np.array([az]), aperture, dome_info
+    )
+
+    assert len(batch_result.ratio) == 1
+    assert np.isclose(expected_blockage, batch_result.ratio[0])
 
 
 @pytest.mark.parametrize(

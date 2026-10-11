@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
+import numpy as np
+
 
 @dataclass
 class TelescopeInfo:
@@ -94,3 +96,10 @@ class DomeInfo:
 
 # Named tuple to immutably store the result of the obstruction calculation.
 ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])
+
+
+@dataclass
+class BatchObstructionResult:
+    ratios: np.ndarray
+    mask: np.ndarray
+    azimuths: np.ndarray
