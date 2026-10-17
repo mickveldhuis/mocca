@@ -198,6 +198,8 @@ def process_batch(
         n_azimuths,
     )
 
+    # TODO: write output as HDF5 (or zarr?)
+
     if visualise:
         plot_batch_obstruction(batch_result.ratios, np.radians(batch_result.azimuths))
 
