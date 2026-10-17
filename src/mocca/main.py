@@ -198,6 +198,11 @@ def process_batch(
         n_azimuths,
     )
 
+    if visualise:
+        logger.warning(
+            "visualisation is currently not implemented for batch processing"
+        )
+
 
 def main():
     # Configure the logger
@@ -227,7 +232,15 @@ def main():
             )
 
         azimuths = np.arange(start, end, step)
-        process_batch(args.ha, args.dec, azimuths, aperture, dome_info, args.aperture)
+        process_batch(
+            args.ha,
+            args.dec,
+            azimuths,
+            aperture,
+            dome_info,
+            args.aperture,
+            visualise=args.visualise,
+        )
     else:
         process_single_azimuth(
             args.ha,
