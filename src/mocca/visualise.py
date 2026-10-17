@@ -62,18 +62,20 @@ def plot_aperture_obstruction(
 
 def plot_batch_obstruction(ratios: np.ndarray, azimuths: np.ndarray):
     """Display the aperture obstruction for the sampled azimuth angles on a polar graph."""
-    fig = plt.figure(figsize=(4.5, 4.5), num="MOCCA - Batch Visualisation")
+    fig = plt.figure(figsize=(5, 5), num="MOCCA - Batch Visualisation")
     frame = fig.add_subplot(1, 1, 1, polar=True)
 
-    frame.plot(azimuths, ratios, ls="", marker="*", ms=6, color="black")
-    frame.fill(azimuths, ratios, alpha=0.2, color="red")
+    frame.set_title("Percentage obstruction for sampled dome azimuths", fontsize=12)
+
+    percentages = 100.0 * ratios
+    frame.plot(azimuths, percentages, ls="", marker="*", ms=6, color="black")
+    frame.fill(azimuths, percentages, alpha=0.2, color="red")
 
     frame.set_rmin(0.0)
-    frame.set_rmax(1.05)
+    frame.set_rmax(120.0)  # TODO: only have labels up to 100
 
     frame.grid(True)
     frame.set_aspect("equal")
-
     fig.tight_layout()
 
     plt.show()
