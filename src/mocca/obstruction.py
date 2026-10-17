@@ -276,7 +276,7 @@ def batch_calculate_obstruction(
 
     n_rays = ray_origins.shape[0]
     logger.info(
-        "checking the obstruction at an azimuth angles between %.2f and %.2f degrees using %i rays",
+        "checking the obstruction for azimuth angles between %.2f and %.2f degrees using %i rays",
         dome_azimuths.min(),
         dome_azimuths.max(),
         n_rays,
