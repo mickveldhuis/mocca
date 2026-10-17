@@ -7,7 +7,7 @@ import numpy as np
 from mocca.aperture import Aperture, create_aperture
 from mocca.obstruction import batch_calculate_obstruction, calculate_obstruction
 from mocca.types import DomeInfo, TelescopeInfo
-from mocca.visualise import plot_aperture_obstruction
+from mocca.visualise import plot_aperture_obstruction, plot_batch_obstruction
 
 logger = logging.getLogger("MOCCA")
 
@@ -199,9 +199,7 @@ def process_batch(
     )
 
     if visualise:
-        logger.warning(
-            "visualisation is currently not implemented for batch processing"
-        )
+        plot_batch_obstruction(batch_result.ratios, np.radians(batch_result.azimuths))
 
 
 def main():

@@ -58,3 +58,22 @@ def plot_aperture_obstruction(
     fig.tight_layout()
 
     plt.show()
+
+
+def plot_batch_obstruction(ratios: np.ndarray, azimuths: np.ndarray):
+    """Display the aperture obstruction for the sampled azimuth angles on a polar graph."""
+    fig = plt.figure(figsize=(4.5, 4.5), num="MOCCA - Batch Visualisation")
+    frame = fig.add_subplot(1, 1, 1, polar=True)
+
+    frame.plot(azimuths, ratios, ls="", marker="*", ms=6, color="black")
+    frame.fill(azimuths, ratios, alpha=0.2, color="red")
+
+    frame.set_rmin(0.0)
+    frame.set_rmax(1.05)
+
+    frame.grid(True)
+    frame.set_aspect("equal")
+
+    fig.tight_layout()
+
+    plt.show()
