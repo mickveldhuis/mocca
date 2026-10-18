@@ -1,6 +1,9 @@
 import argparse
+import logging
 
 import numpy as np
+
+logger = logging.getLogger("MOCCA")
 
 
 class RangeAction(argparse.Action):
@@ -75,29 +78,41 @@ class RangeAction(argparse.Action):
         setattr(namespace, self.dest, range_array)
 
 
-def azimuth_type(value):
-    az = float(value)
-    if az < 0.0 or az > 360.0:
-        raise argparse.ArgumentTypeError(
-            "invalid azimuth: expecting a value on the following interval [0, 360) deg"
-        )
+def azimuth_type(value: str) -> float:
+    try:
+        az = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid azimuth: '{value}' is not a number")
 
     return az
 
 
-def hour_angle_type(value):
-    ha = float(value)
-    if ha < 0.0 or ha >= 24.0:
+def hour_angle_type(value: str) -> float:
+    try:
+        ha = float(value)
+    except ValueError:
         raise argparse.ArgumentTypeError(
-            "invalid hour angle: expecting a value on the following interval [0, 24) h"
+            f"invalid hour angle: '{value}' is not a number"
+        )
+
+    if abs(ha) > 48:
+        logger.warning(
+            "hour angle '--ha %.1f' seems large; please check if this is intentional",
+            ha,
         )
 
     # Convert to degrees for further processing
     return 15.0 * ha
 
 
-def declination_type(value):
-    dec = float(value)
+def declination_type(value: str) -> float:
+    try:
+        dec = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"invalid declination: '{value}' is not a number"
+        )
+
     if dec < -90.0 or dec > 90.0:
         raise argparse.ArgumentTypeError(
             "invalid declination: expecting a value on the following interval [-90, 90] deg"
@@ -106,7 +121,7 @@ def declination_type(value):
     return dec
 
 
-def positive_integer_type(value):
+def positive_integer_type(value: str) -> int:
     val = int(value)
     if val <= 0:
         raise argparse.ArgumentTypeError("invalid value: expecting a positive integer")
@@ -149,7 +164,6 @@ def parse_cli_arguments():
         help="telescope declination -90 to 90 deg",
     )
     parser.add_argument(
-        "-a",
         "--aperture",
         type=str,
         choices=["telescope", "guider", "finder"],
@@ -157,23 +171,25 @@ def parse_cli_arguments():
         help="telescope aperture for which to calculate the obstruction",
     )
     parser.add_argument(
-        "-r",
         "--rate",
         type=positive_integer_type,
         default=4,
         help="number of radial circles of rays",
     )
     parser.add_argument(
-        "-v",
-        "--visualise",
+        "--inspect",
         action="store_true",
         help="visualise the blocked rays inside of the circular aperture",
     )
     parser.add_argument(
-        "-c",
         "--config",
         metavar="PATH",
         help="configuration file with the telescope and dome configuration",
+    )
+    parser.add_argument(
+        "--init-config",
+        metavar="PATH",
+        help="copy the default configuration file to the current working directory",
     )
 
     return parser.parse_args()

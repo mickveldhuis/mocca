@@ -15,6 +15,10 @@ logger = logging.getLogger("MOCCA")
 MOCCA_CONFIG = "mocca.toml"
 
 
+def create_config():
+    pass
+
+
 def load_or_create_config(config_filename: str | None) -> Path:
     if config_filename:
         user_config = Path(config_filename).resolve()
@@ -138,7 +142,7 @@ def main():
             args.az_range,
             aperture,
             dome_info,
-            visualise=args.visualise,
+            visualise=args.inspect,
         )
     else:
         process_single_azimuth(
@@ -147,5 +151,5 @@ def main():
             args.az,
             aperture,
             dome_info,
-            visualise=args.visualise,
+            visualise=args.inspect,
         )
