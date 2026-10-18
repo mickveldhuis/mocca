@@ -26,6 +26,7 @@ def create_aperture(
                 telescope_info.aperture_radius,
                 sec_radius=telescope_info.aperture_sec_radius,
                 rate=rate,
+                identifier=aperture_type,
             )
         case "guider":
             guider_mount = CompositeMount(
@@ -36,6 +37,7 @@ def create_aperture(
                 telescope_info.guider_radius,
                 sec_radius=telescope_info.guider_sec_radius,
                 rate=rate,
+                identifier=aperture_type,
             )
         case "finder":
             guider_mount = CompositeMount(
@@ -50,6 +52,7 @@ def create_aperture(
                 telescope_info.finder_radius,
                 sec_radius=0.0,
                 rate=rate,
+                identifier=aperture_type,
             )
         case _:
             raise ValueError("Unknown aperture type")
@@ -59,7 +62,12 @@ class Aperture:
     """Class representing the telescope aperture."""
 
     def __init__(
-        self, mount: Transformable, radius: float, sec_radius: float = 0, rate: int = 3
+        self,
+        mount: Transformable,
+        radius: float,
+        sec_radius: float = 0,
+        rate: int = 3,
+        identifier: str = "",
     ) -> None:
         """
         Construct a telescope aperture.
@@ -70,9 +78,12 @@ class Aperture:
         :param info: metadata object with the telescope's geometrical properties
         """
         self.mount = mount
+
         self.radius = radius
         self.sec_radius = sec_radius
         self.sample_rate = rate
+
+        self.identifier = identifier
 
     def transformation(self, ha: float, dec: float) -> np.ndarray:
         """

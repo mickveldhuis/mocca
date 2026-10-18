@@ -1,10 +1,10 @@
-import argparse
 import logging
 from pathlib import Path
 
 import numpy as np
 
 from mocca.aperture import Aperture, create_aperture
+from mocca.cli import parse_cli_arguments
 from mocca.obstruction import batch_calculate_obstruction, calculate_obstruction
 from mocca.types import DomeInfo, TelescopeInfo
 from mocca.visualise import plot_aperture_obstruction, plot_batch_obstruction
@@ -40,99 +40,7 @@ def load_or_create_config(config_filename: str | None) -> Path:
         default_config = Path(__file__).parent / MOCCA_CONFIG
         default_config.copy(user_config)
 
-        # Check again whether the copying is succesful
-        if not user_config.exists():
-            raise OSError(f"could not copy {default_config} to {user_config}")
-
     return user_config
-
-
-def parse_cli_arguments():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Compute the fractional obstruction of a telescope by a hemispherical dome. The telescope should be affixed to an equatorial mount.",
-    )
-
-    def azimuth(value):
-        az = float(value)
-        if az < 0.0 or az > 360.0:
-            raise argparse.ArgumentTypeError(
-                "invalid azimuth: expecting a value on the following interval [0, 360) deg"
-            )
-
-        return az
-
-    def hour_angle(value):
-        ha = float(value)
-        if ha < 0.0 or ha >= 24.0:
-            raise argparse.ArgumentTypeError(
-                "invalid hour angle: expecting a value on the following interval [0, 24) h"
-            )
-
-        # Convert to degrees for further processing
-        return 15.0 * ha
-
-    def declination(value):
-        dec = float(value)
-        if dec < -90.0 or dec > 90.0:
-            raise argparse.ArgumentTypeError(
-                "invalid declination: expecting a value on the following interval [-90, 90] deg"
-            )
-
-        return dec
-
-    def positive_integer(value):
-        val = int(value)
-        if val < 0:
-            raise argparse.ArgumentTypeError(
-                "invalid value: expecting a positive integer"
-            )
-
-        return val
-
-    parser.add_argument(
-        "--az", type=azimuth, default=0.0, help="dome azimuth: 0 to 360 deg"
-    )
-    parser.add_argument(
-        "--az-range", type=azimuth, nargs=3, help="dome azimuth: 0 to 360 deg"
-    )
-    parser.add_argument(
-        "--ha", type=hour_angle, default=0.0, help="telescope hour angle: 0 to 24 h"
-    )
-    parser.add_argument(
-        "--dec",
-        type=declination,
-        default=0.0,
-        help="telescope declination -90 to 90 deg",
-    )
-    parser.add_argument(
-        "-a",
-        "--aperture",
-        type=str,
-        choices=["telescope", "guider", "finder"],
-        default="telescope",
-        help="telescope aperture for which to calculate the obstruction",
-    )
-    parser.add_argument(
-        "-r",
-        "--rate",
-        type=positive_integer,
-        default=4,
-        help="number of radial circles of rays",
-    )
-    parser.add_argument(
-        "-v",
-        "--visualise",
-        action="store_true",
-        help="visualise the blocked rays inside of the circular aperture",
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        help="configuration file with the telescope and dome configuration",
-    )
-
-    return parser.parse_args()
 
 
 def process_single_azimuth(
@@ -141,7 +49,6 @@ def process_single_azimuth(
     az: float,
     aperture: Aperture,
     dome: DomeInfo,
-    aperture_name: str,
     visualise: bool = False,
 ):
     """
@@ -157,7 +64,7 @@ def process_single_azimuth(
     blockage, blocked_rays = calculate_obstruction(ha, dec, az, aperture, dome)
 
     if blockage is not None:
-        logger.info("%s aperture obstruction = %.3f", aperture_name, blockage)
+        logger.info("%s aperture obstruction = %.3f", aperture.identifier, blockage)
     else:
         raise RuntimeError("The fractional obstruction could not be computed")
 
@@ -171,7 +78,6 @@ def process_batch(
     az_values: np.ndarray,
     aperture: Aperture,
     dome: DomeInfo,
-    aperture_name: str,
     visualise: bool = False,
 ):
     """
@@ -185,7 +91,7 @@ def process_batch(
     """
     batch_result = batch_calculate_obstruction(ha, dec, az_values, aperture, dome)
 
-    # Display the number of unobstructed dome orientations
+    # Display the fraction of obstructed rays for each sampled dome orientation
     is_obstructed = np.isclose(batch_result.ratios, 1.0)
 
     n_azimuths = batch_result.ratios.size
@@ -193,7 +99,7 @@ def process_batch(
 
     logger.info(
         "%s aperture obstructed for %i / %i sampled dome positions",
-        aperture_name,
+        aperture.identifier,
         n_obstructed,
         n_azimuths,
     )
@@ -201,7 +107,7 @@ def process_batch(
     # TODO: write output as HDF5 (or zarr?)
 
     if visualise:
-        plot_batch_obstruction(batch_result.ratios, np.radians(batch_result.azimuths))
+        plot_batch_obstruction(batch_result.ratios, batch_result.azimuths)
 
 
 def main():
@@ -224,21 +130,14 @@ def main():
     # Compute and (optionally) visualise the obstruction
     aperture = create_aperture(args.aperture, args.rate, telescope_info)
 
-    if args.az_range:
-        start, end, step = args.az_range
-        if step <= 0.0 or end <= start:
-            raise ValueError(
-                f"azimuth range [{start}, {end}) with step size {step} is invalid"
-            )
-
-        azimuths = np.arange(start, end, step)
+    azimuth_range = args.az_range
+    if azimuth_range is not None and len(azimuth_range) > 0:
         process_batch(
             args.ha,
             args.dec,
-            azimuths,
+            args.az_range,
             aperture,
             dome_info,
-            args.aperture,
             visualise=args.visualise,
         )
     else:
@@ -248,6 +147,5 @@ def main():
             args.az,
             aperture,
             dome_info,
-            args.aperture,
             visualise=args.visualise,
         )
