@@ -1,10 +1,15 @@
+import logging
 import tomllib
 from collections import namedtuple
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Self
 
+import h5py
 import numpy as np
+
+logger = logging.getLogger("MOCCA")
 
 
 @dataclass
@@ -102,4 +107,48 @@ ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])
 class BatchObstructionResult:
     ratios: np.ndarray
     masks: np.ndarray
-    azimuths: np.ndarray
+
+    ha: np.ndarray
+    dec: np.ndarray
+    az: np.ndarray
+
+    def to_hdf5(self, directory: Path) -> None:
+        """
+        Write an obstruction cube to disk as a HDF5 dataset.
+
+        :param directory: path to the directory in which to store the result
+        """
+        shape = (self.ha.size, self.dec.size, self.az.size)
+
+        if self.ratios.ndim != 3 or self.ratios.shape != shape:
+            raise ValueError(
+                f"expecting an array of obstruction fractions of shape {shape}, but got {self.ratios.shape}"
+            )
+
+        filename = datetime.now(UTC).strftime("%Y%M%d_%H%M%S_mocca.h5")
+        output_path = directory / filename
+
+        with h5py.File(output_path, "w") as h5_file:
+            obstruction_ds = h5_file.create_dataset("obstruction", data=self.ratios)
+            # TODO: add metadata as attributes, e.g. which telescope and dome config,
+            # number of rays, and other simulation parameters.
+
+            # Setup axes and create dimension scales
+            ha_ds = h5_file.create_dataset("ha", data=self.ha)
+            ha_ds.make_scale()
+            ha_ds.attrs["unit"] = "deg"
+
+            dec_ds = h5_file.create_dataset("dec", data=self.dec)
+            dec_ds.make_scale()
+            dec_ds.attrs["unit"] = "deg"
+
+            az_ds = h5_file.create_dataset("az", data=self.az)
+            az_ds.make_scale()
+            az_ds.attrs["unit"] = "deg"
+
+            # Attach dimension scales
+            obstruction_ds.dims[0].attach_scale(ha_ds)
+            obstruction_ds.dims[1].attach_scale(dec_ds)
+            obstruction_ds.dims[2].attach_scale(az_ds)
+
+        logger.info("batch obstruction result written to %s", output_path)

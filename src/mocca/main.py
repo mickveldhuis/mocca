@@ -108,10 +108,13 @@ def process_batch(
         n_azimuths,
     )
 
-    # TODO: write output as HDF5 (or zarr?)
+    batch_result.to_hdf5(Path.cwd())
 
     if visualise:
-        plot_batch_obstruction(batch_result.ratios, batch_result.azimuths)
+        # FIXME: currently the batch calculation produces a cube of shape (1, 1, N),
+        # but this won't hold in the future when we allow processing multiple (ha, dec)
+        # pairs simultaneously.
+        plot_batch_obstruction(batch_result.ratios[0, 0, :], batch_result.az)
 
 
 def main():

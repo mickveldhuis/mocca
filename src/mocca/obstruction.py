@@ -285,4 +285,13 @@ def batch_calculate_obstruction(
     masks = batch_check_obstruction(ray_origins, pointing, dome_azimuths, info)
     ratios = masks.mean(axis=1)
 
-    return BatchObstructionResult(ratios=ratios, masks=masks, azimuths=dome_azimuths)
+    # FIXME: currently the batch calculation produces a cube of shape (1, 1, N),
+    # hence we add empty new axes, but this won't hold in the future when we allow
+    # processing multiple (ha, dec) pairs simultaneously.
+    return BatchObstructionResult(
+        ratios=ratios[np.newaxis, np.newaxis, :],
+        masks=masks[np.newaxis, np.newaxis, :],
+        ha=np.array([ha]),
+        dec=np.array([dec]),
+        az=dome_azimuths,
+    )
