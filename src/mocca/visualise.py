@@ -71,16 +71,13 @@ def plot_batch_obstruction(ratios: np.ndarray, azimuths: np.ndarray):
     percentages = 100.0 * ratios
     frame.plot(az, percentages, ls="", marker="*", ms=6, color="black")
 
-    # TODO: add a dummy zero point when the az range < 180 (or some other val???), such that
-    # fill() crossed the zero point
+    # FIXME: remove the dummy zero point when the az range is close to 360.
     frame.fill(
         np.concatenate([az, [0]]),
         np.concatenate([percentages, [0]]),
         alpha=0.2,
         color="red",
     )
-
-    # frame.fill(azimuths, percentages, alpha=0.2, color="red")
 
     perc_min = 0.0
     perc_max = 120.0

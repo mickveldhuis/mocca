@@ -1,4 +1,6 @@
+import importlib
 import logging
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -15,11 +17,28 @@ logger = logging.getLogger("MOCCA")
 MOCCA_CONFIG = "mocca.toml"
 
 
-def create_config():
-    pass
+def create_configuration_file() -> Path:
+    """Create a MOCCA configuration file in the current working directory."""
+    user_config = Path.cwd() / MOCCA_CONFIG
+
+    if not user_config.exists():
+        logger.warning(
+            "%s not found in the current working directory; creating one at: %s",
+            MOCCA_CONFIG,
+            user_config,
+        )
+
+        default_config = Path(__file__).parent / MOCCA_CONFIG
+        default_config.copy(user_config)
+
+    return user_config
 
 
-def load_or_create_config(config_filename: str | None) -> Path:
+def load_configuration_file(config_filename: str | None) -> Path:
+    """
+    Load the MOCCA configuration TOML file. Fall back to mocca.toml
+    in the current working directory, if it exists.
+    """
     if config_filename:
         user_config = Path(config_filename).resolve()
 
@@ -33,16 +52,6 @@ def load_or_create_config(config_filename: str | None) -> Path:
     # If the user didn't specify a configuration file, look in the current
     # working directory, and create one if it doesn't exist.
     user_config = Path.cwd() / MOCCA_CONFIG
-
-    if not user_config.exists():
-        logger.warning(
-            "%s not found in the current working directory; creating one at: %s",
-            MOCCA_CONFIG,
-            user_config,
-        )
-
-        default_config = Path(__file__).parent / MOCCA_CONFIG
-        default_config.copy(user_config)
 
     return user_config
 
@@ -82,6 +91,7 @@ def process_batch(
     az_values: np.ndarray,
     aperture: Aperture,
     dome: DomeInfo,
+    output_path: Path | None,
     visualise: bool = False,
 ):
     """
@@ -108,7 +118,7 @@ def process_batch(
         n_azimuths,
     )
 
-    batch_result.to_hdf5(Path.cwd())
+    batch_result.to_hdf5(file=output_path)
 
     if visualise:
         # FIXME: currently the batch calculation produces a cube of shape (1, 1, N),
@@ -127,12 +137,24 @@ def main():
     # Parse CLI arguments
     args = parse_cli_arguments()
 
-    # Load the telescope-dome configuration from the provided TOML file
-    config_path = load_or_create_config(args.config)
+    version = importlib.metadata.version("mocca")
+    logger.info("running MOCCA version %s", version)
 
-    logger.info("loading telescope and dome parameters from %s", config_path.resolve())
-    telescope_info = TelescopeInfo.from_file(config_path)
-    dome_info = DomeInfo.from_file(config_path)
+    if args.init_config:
+        create_configuration_file()
+
+    # Load the telescope-dome configuration from the provided TOML file
+    config_path = load_configuration_file(args.config)
+
+    try:
+        logger.info(
+            "loading telescope and dome parameters from %s", config_path.resolve()
+        )
+        telescope_info = TelescopeInfo.from_file(config_path)
+        dome_info = DomeInfo.from_file(config_path)
+    except FileNotFoundError:
+        logger.error("the configuration file could not be found!")
+        sys.exit()
 
     # Compute and (optionally) visualise the obstruction
     aperture = create_aperture(args.aperture, args.rate, telescope_info)
@@ -145,6 +167,7 @@ def main():
             args.az_range,
             aperture,
             dome_info,
+            args.output,
             visualise=args.inspect,
         )
     else:

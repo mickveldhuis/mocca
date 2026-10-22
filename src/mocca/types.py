@@ -112,7 +112,7 @@ class BatchObstructionResult:
     dec: np.ndarray
     az: np.ndarray
 
-    def to_hdf5(self, directory: Path) -> None:
+    def to_hdf5(self, file: Path | None = None) -> None:
         """
         Write an obstruction cube to disk as a HDF5 dataset.
 
@@ -125,13 +125,16 @@ class BatchObstructionResult:
                 f"expecting an array of obstruction fractions of shape {shape}, but got {self.ratios.shape}"
             )
 
-        filename = datetime.now(UTC).strftime("%Y%M%d_%H%M%S_mocca.h5")
-        output_path = directory / filename
+        date_tag = datetime.now(UTC).strftime("%Y%M%d%H%M%S")
+        filename = f"{date_tag}_mocca_cube.h5"
+        output_path = Path.cwd() / filename if file is None else file
 
         with h5py.File(output_path, "w") as h5_file:
+            h5_file.attrs["timestamp"] = date_tag
+
             obstruction_ds = h5_file.create_dataset("obstruction", data=self.ratios)
-            # TODO: add metadata as attributes, e.g. which telescope and dome config,
-            # number of rays, and other simulation parameters.
+            # TODO: add additional metadata as attributes, e.g. aperture identifier,
+            # dome config, number of rays, and other simulation parameters.
 
             # Setup axes and create dimension scales
             ha_ds = h5_file.create_dataset("ha", data=self.ha)

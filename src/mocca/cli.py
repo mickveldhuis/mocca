@@ -188,8 +188,13 @@ def parse_cli_arguments():
     )
     parser.add_argument(
         "--init-config",
+        action="store_true",
+        help="copy the default configuration file to the current working directory if no 'mocca.toml' exists",
+    )
+    parser.add_argument(
+        "--output",
         metavar="PATH",
-        help="copy the default configuration file to the current working directory",
+        help="path to the output HDF5 file with the obstruction grid",
     )
 
     return parser.parse_args()
