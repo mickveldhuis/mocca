@@ -1,5 +1,6 @@
 # Project specific files
 /mocca.toml
+*.h5
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

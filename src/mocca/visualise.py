@@ -58,3 +58,36 @@ def plot_aperture_obstruction(
     fig.tight_layout()
 
     plt.show()
+
+
+def plot_batch_obstruction(ratios: np.ndarray, azimuths: np.ndarray):
+    """Display the aperture obstruction for the sampled azimuth angles on a polar graph."""
+    fig = plt.figure(figsize=(5, 5), num="MOCCA - Batch Visualisation")
+    frame = fig.add_subplot(1, 1, 1, polar=True)
+
+    frame.set_title("Percentage obstruction for sampled dome azimuths", fontsize=12)
+
+    az = np.radians(azimuths)
+    percentages = 100.0 * ratios
+    frame.plot(az, percentages, ls="", marker="*", ms=6, color="black")
+
+    # FIXME: remove the dummy zero point when the az range is close to 360.
+    frame.fill(
+        np.concatenate([az, [0]]),
+        np.concatenate([percentages, [0]]),
+        alpha=0.2,
+        color="red",
+    )
+
+    perc_min = 0.0
+    perc_max = 120.0
+    frame.set_rmin(perc_min)
+    frame.set_rmax(perc_max)
+
+    frame.set_rticks(np.arange(perc_min, perc_max, 20.0))
+
+    frame.grid(True)
+    frame.set_aspect("equal")
+    fig.tight_layout()
+
+    plt.show()
