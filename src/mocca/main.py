@@ -159,7 +159,6 @@ def main():
     # Compute and (optionally) visualise the obstruction
     aperture = create_aperture(args.aperture, args.rate, telescope_info)
 
-    print(args)
     match args.command:
         case "batch":
             process_batch(
@@ -171,7 +170,7 @@ def main():
                 args.output,
                 visualise=args.inspect,
             )
-        case "inspect":
+        case "calc":
             process_single_azimuth(
                 args.ha,
                 args.dec,
@@ -180,3 +179,5 @@ def main():
                 dome_info,
                 visualise=args.inspect,
             )
+        case _:
+            raise ValueError("unknown mocca command")

@@ -132,14 +132,14 @@ def positive_integer_type(value: str) -> int:
 def parse_cli_arguments():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Compute the fractional obstruction of a telescope by a hemispherical dome. The telescope should be affixed to an equatorial mount.",
+        description="Compute the fractional obstruction of a telescope by a hemispherical dome, for a telescope affixed to an equatorial mount.",
     )
     subparser = parser.add_subparsers(
         dest="command",
-        help="available subcommands to either inspect a single telescope pointing and dome orientation or batch compute an obstruction cube",
+        # help="available modes, to either calculate the single telescope pointing and dome orientation or batch compute an obstruction cube",
     )
 
-    # Arguments shared by both the single pointing and dome orientation 'inspect' and 'batch' compute mode.
+    # Arguments shared by both the single pointing and dome orientation 'demo' and 'batch' compute mode.
     shared_parser = argparse.ArgumentParser(add_help=False)
     shared_parser.add_argument(
         "--aperture",
@@ -170,23 +170,27 @@ def parse_cli_arguments():
         help="copy the default configuration file to the current working directory if no 'mocca.toml' exists",
     )
 
-    # Arguments for the inspect mode
-    inspect_parser = subparser.add_parser("inspect", parents=[shared_parser])
-    inspect_parser.add_argument(
+    # Arguments for the demo mode
+    calc_parser = subparser.add_parser(
+        "calc",
+        parents=[shared_parser],
+        help="calculate the obstruction fraction for a single telescope pointing and dome position.",
+    )
+    calc_parser.add_argument(
         "--az",
         metavar="AZIMUTH",
         type=azimuth_type,
         default=0.0,
         help="dome azimuth: 0 to 360 deg",
     )
-    inspect_parser.add_argument(
+    calc_parser.add_argument(
         "--ha",
         metavar="HOUR ANGLE",
         type=hour_angle_type,
         default=0.0,
         help="telescope hour angle: 0 to 24 h",
     )
-    inspect_parser.add_argument(
+    calc_parser.add_argument(
         "--dec",
         metavar="DECLINATION",
         type=declination_type,
@@ -195,7 +199,11 @@ def parse_cli_arguments():
     )
 
     # Arguments for the batch compute mode
-    batch_parser = subparser.add_parser("batch", parents=[shared_parser])
+    batch_parser = subparser.add_parser(
+        "batch",
+        parents=[shared_parser],
+        help="batch compute an obstruction cube for multiple telescope pointings and dome positions; the output is stored in a HDF5 file.",
+    )
     batch_parser.add_argument(
         "--ha-range",
         metavar="N",
