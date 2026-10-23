@@ -159,23 +159,24 @@ def main():
     # Compute and (optionally) visualise the obstruction
     aperture = create_aperture(args.aperture, args.rate, telescope_info)
 
-    azimuth_range = args.az_range
-    if azimuth_range is not None and len(azimuth_range) > 0:
-        process_batch(
-            args.ha,
-            args.dec,
-            args.az_range,
-            aperture,
-            dome_info,
-            args.output,
-            visualise=args.inspect,
-        )
-    else:
-        process_single_azimuth(
-            args.ha,
-            args.dec,
-            args.az,
-            aperture,
-            dome_info,
-            visualise=args.inspect,
-        )
+    print(args)
+    match args.command:
+        case "batch":
+            process_batch(
+                args.ha_range,
+                args.dec_range,
+                args.az_range,
+                aperture,
+                dome_info,
+                args.output,
+                visualise=args.inspect,
+            )
+        case "inspect":
+            process_single_azimuth(
+                args.ha,
+                args.dec,
+                args.az,
+                aperture,
+                dome_info,
+                visualise=args.inspect,
+            )

@@ -134,64 +134,87 @@ def parse_cli_arguments():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Compute the fractional obstruction of a telescope by a hemispherical dome. The telescope should be affixed to an equatorial mount.",
     )
+    subparser = parser.add_subparsers(
+        dest="command",
+        help="available subcommands to either inspect a single telescope pointing and dome orientation or batch compute an obstruction cube",
+    )
 
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument(
-        "--az",
-        metavar="AZIMUTH",
-        type=azimuth_type,
-        default=0.0,
-        help="dome azimuth: 0 to 360 deg",
-    )
-    group.add_argument(
-        "--az-range",
-        metavar="N",
-        action=RangeAction,
-        help="dome azimuth range: END | START:STOP | START:STOP:STEP",
-    )
-    parser.add_argument(
-        "--ha",
-        metavar="HOUR ANGLE",
-        type=hour_angle_type,
-        default=0.0,
-        help="telescope hour angle: 0 to 24 h",
-    )
-    parser.add_argument(
-        "--dec",
-        metavar="DECLINATION",
-        type=declination_type,
-        default=0.0,
-        help="telescope declination -90 to 90 deg",
-    )
-    parser.add_argument(
+    # Arguments shared by both the single pointing and dome orientation 'inspect' and 'batch' compute mode.
+    shared_parser = argparse.ArgumentParser(add_help=False)
+    shared_parser.add_argument(
         "--aperture",
         type=str,
         choices=["telescope", "guider", "finder"],
         default="telescope",
         help="telescope aperture for which to calculate the obstruction",
     )
-    parser.add_argument(
+    shared_parser.add_argument(
         "--rate",
         type=positive_integer_type,
         default=4,
         help="number of radial circles of rays",
     )
-    parser.add_argument(
+    shared_parser.add_argument(
         "--inspect",
         action="store_true",
         help="visualise the blocked rays inside of the circular aperture",
     )
-    parser.add_argument(
+    shared_parser.add_argument(
         "--config",
         metavar="PATH",
         help="configuration file with the telescope and dome configuration",
     )
-    parser.add_argument(
+    shared_parser.add_argument(
         "--init-config",
         action="store_true",
         help="copy the default configuration file to the current working directory if no 'mocca.toml' exists",
     )
-    parser.add_argument(
+
+    # Arguments for the inspect mode
+    inspect_parser = subparser.add_parser("inspect", parents=[shared_parser])
+    inspect_parser.add_argument(
+        "--az",
+        metavar="AZIMUTH",
+        type=azimuth_type,
+        default=0.0,
+        help="dome azimuth: 0 to 360 deg",
+    )
+    inspect_parser.add_argument(
+        "--ha",
+        metavar="HOUR ANGLE",
+        type=hour_angle_type,
+        default=0.0,
+        help="telescope hour angle: 0 to 24 h",
+    )
+    inspect_parser.add_argument(
+        "--dec",
+        metavar="DECLINATION",
+        type=declination_type,
+        default=0.0,
+        help="telescope declination -90 to 90 deg",
+    )
+
+    # Arguments for the batch compute mode
+    batch_parser = subparser.add_parser("batch", parents=[shared_parser])
+    batch_parser.add_argument(
+        "--ha-range",
+        metavar="N",
+        action=RangeAction,
+        help="telescope hour angle range: END | START:STOP | START:STOP:STEP",
+    )
+    batch_parser.add_argument(
+        "--dec-range",
+        metavar="N",
+        action=RangeAction,
+        help="telescope declination range: END | START:STOP | START:STOP:STEP",
+    )
+    batch_parser.add_argument(
+        "--az-range",
+        metavar="N",
+        action=RangeAction,
+        help="dome azimuth range: END | START:STOP | START:STOP:STEP",
+    )
+    batch_parser.add_argument(
         "--output",
         metavar="PATH",
         help="path to the output HDF5 file with the obstruction grid",
