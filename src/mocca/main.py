@@ -162,8 +162,8 @@ def main():
     match args.command:
         case "batch":
             process_batch(
-                args.ha_range,
-                args.dec_range,
+                args.ha_range or args.ha,
+                args.dec_range or args.dec,
                 args.az_range,
                 aperture,
                 dome_info,

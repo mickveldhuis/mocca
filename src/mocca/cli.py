@@ -174,14 +174,8 @@ def parse_cli_arguments():
     calc_parser = subparser.add_parser(
         "calc",
         parents=[shared_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="calculate the obstruction fraction for a single telescope pointing and dome position.",
-    )
-    calc_parser.add_argument(
-        "--az",
-        metavar="AZIMUTH",
-        type=azimuth_type,
-        default=0.0,
-        help="dome azimuth: 0 to 360 deg",
     )
     calc_parser.add_argument(
         "--ha",
@@ -197,25 +191,52 @@ def parse_cli_arguments():
         default=0.0,
         help="telescope declination -90 to 90 deg",
     )
+    calc_parser.add_argument(
+        "--az",
+        metavar="AZIMUTH",
+        type=azimuth_type,
+        default=0.0,
+        help="dome azimuth: 0 to 360 deg",
+    )
 
     # Arguments for the batch compute mode
     batch_parser = subparser.add_parser(
         "batch",
         parents=[shared_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="batch compute an obstruction cube for multiple telescope pointings and dome positions; the output is stored in a HDF5 file.",
     )
-    batch_parser.add_argument(
+
+    # Support computing azimuth batches but a single ha, dec
+    # TODO: ensure that when --ha is selected --dec is as well and similarly for --ha-range + --dec-range
+    ha_group = batch_parser.add_mutually_exclusive_group(required=True)
+    ha_group.add_argument(
+        "--ha",
+        metavar="HOUR ANGLE",
+        type=hour_angle_type,
+        help="telescope hour angle: 0 to 24 h",
+    )
+    ha_group.add_argument(
         "--ha-range",
         metavar="N",
         action=RangeAction,
         help="telescope hour angle range: END | START:STOP | START:STOP:STEP",
     )
-    batch_parser.add_argument(
+
+    dec_group = batch_parser.add_mutually_exclusive_group(required=True)
+    dec_group.add_argument(
+        "--dec",
+        metavar="DECLINATION",
+        type=declination_type,
+        help="telescope declination -90 to 90 deg",
+    )
+    dec_group.add_argument(
         "--dec-range",
         metavar="N",
         action=RangeAction,
         help="telescope declination range: END | START:STOP | START:STOP:STEP",
     )
+
     batch_parser.add_argument(
         "--az-range",
         metavar="N",
