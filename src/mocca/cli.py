@@ -134,12 +134,9 @@ def parse_cli_arguments():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Compute the fractional obstruction of a telescope by a hemispherical dome, for a telescope affixed to an equatorial mount.",
     )
-    subparser = parser.add_subparsers(
-        dest="command",
-        # help="available modes, to either calculate the single telescope pointing and dome orientation or batch compute an obstruction cube",
-    )
+    subparser = parser.add_subparsers(dest="command")
 
-    # Arguments shared by both the single pointing and dome orientation 'demo' and 'batch' compute mode.
+    # Arguments shared by all three modes
     shared_parser = argparse.ArgumentParser(add_help=False)
     shared_parser.add_argument(
         "--aperture",
@@ -165,6 +162,7 @@ def parse_cli_arguments():
         help="copy the default configuration file to the current working directory if no 'mocca.toml' exists",
     )
 
+    # Specific argument(s) for modes that offer a diagnostic plot
     inspect_parser = argparse.ArgumentParser(add_help=False)
     inspect_parser.add_argument(
         "--inspect",
@@ -172,6 +170,7 @@ def parse_cli_arguments():
         help="plot the obstruction fraction",
     )
 
+    # Specific argument(s) for modes that write the output to disk
     output_parser = argparse.ArgumentParser(add_help=False)
     output_parser.add_argument(
         "--output",
@@ -179,7 +178,7 @@ def parse_cli_arguments():
         help="path to the output HDF5 file with the obstruction grid",
     )
 
-    # Arguments for the demo mode
+    # Arguments for the calc mode
     calc_parser = subparser.add_parser(
         "calc",
         parents=[shared_parser, inspect_parser],

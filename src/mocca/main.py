@@ -187,6 +187,7 @@ def main():
                 aperture,
                 dome_info,
                 args.output,
+                visualise=False,
             )
         case _:
             raise ValueError("unknown mocca command")
