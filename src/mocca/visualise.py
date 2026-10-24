@@ -68,21 +68,21 @@ def plot_batch_obstruction(ratios: np.ndarray, azimuths: np.ndarray):
     frame.set_title("Percentage obstruction for sampled dome azimuths", fontsize=12)
 
     az = np.radians(azimuths)
-    percentages = 100.0 * ratios
-    frame.plot(az, percentages, ls="", marker="*", ms=6, color="black")
+    perc = 100.0 * ratios
+    frame.plot(az, perc, ls="", marker="*", ms=6, color="black")
 
-    # FIXME: remove the dummy zero point when the az range is close to 360.
+    az_closed = np.concatenate([az, [az[-1], az[0]]])
+    perc_closed = np.concatenate([perc, [0, 0]])
     frame.fill(
-        np.concatenate([az, [0]]),
-        np.concatenate([percentages, [0]]),
+        az_closed,
+        perc_closed,
         alpha=0.2,
         color="red",
     )
 
     perc_min = 0.0
     perc_max = 120.0
-    frame.set_rmin(perc_min)
-    frame.set_rmax(perc_max)
+    frame.set_rlim(perc_min, perc_max)
 
     frame.set_rticks(np.arange(perc_min, perc_max, 20.0))
 

@@ -55,7 +55,7 @@ def create_aperture(
                 identifier=aperture_type,
             )
         case _:
-            raise ValueError("Unknown aperture type")
+            raise ValueError("unknown aperture type")
 
 
 class Aperture:
