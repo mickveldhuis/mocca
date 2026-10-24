@@ -160,16 +160,6 @@ def main():
     aperture = create_aperture(args.aperture, args.rate, telescope_info)
 
     match args.command:
-        case "batch":
-            process_batch(
-                args.ha_range or args.ha,
-                args.dec_range or args.dec,
-                args.az_range,
-                aperture,
-                dome_info,
-                args.output,
-                visualise=args.inspect,
-            )
         case "calc":
             process_single_azimuth(
                 args.ha,
@@ -178,6 +168,25 @@ def main():
                 aperture,
                 dome_info,
                 visualise=args.inspect,
+            )
+        case "scan":
+            process_batch(
+                args.ha,
+                args.dec,
+                args.az_range,
+                aperture,
+                dome_info,
+                args.output,
+                visualise=args.inspect,
+            )
+        case "batch":
+            process_batch(
+                args.ha_range,
+                args.dec_range,
+                args.az_range,
+                aperture,
+                dome_info,
+                args.output,
             )
         case _:
             raise ValueError("unknown mocca command")
