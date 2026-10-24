@@ -56,7 +56,7 @@ def load_configuration_file(config_filename: str | None) -> Path:
     return user_config
 
 
-def process_single_azimuth(
+def process_calc(
     ha: float,
     dec: float,
     az: float,
@@ -65,7 +65,8 @@ def process_single_azimuth(
     visualise: bool = False,
 ):
     """
-    Calculate the obstruction for a single dome orientation and telescope pointing, and optionally plot the results.
+    Calculate the obstruction for a single dome orientation and
+    single telescope pointing, and optionally plot the results.
 
     :param ha: telescope hour angle (deg)
     :param dec: telescope declination (deg)
@@ -85,7 +86,7 @@ def process_single_azimuth(
         plot_aperture_obstruction(aperture, blocked_rays, az)
 
 
-def process_batch(
+def process_scan(
     ha: float,
     dec: float,
     az_values: np.ndarray,
@@ -95,13 +96,16 @@ def process_batch(
     visualise: bool = False,
 ):
     """
-    Calculate the obstruction for a multiple dome orientation given as single telescope pointing.
+    Calculate the obstruction for multiple dome orientation given a single
+    telescope pointing, and optionally plot the results.
 
     :param ha: telescope hour angle (deg)
     :param dec: telescope declination (deg)
     :param az_values: list of dome orientations (deg)
     :param aperture: aperture configuration
     :param dome: dome properties
+    :param output_path: path to the HDF5 file that we write the output to
+    :param visualise: whether to plot the obstruction fraction
     """
     batch_result = batch_calculate_obstruction(ha, dec, az_values, aperture, dome)
 
@@ -112,7 +116,7 @@ def process_batch(
     n_obstructed = is_obstructed.sum()
 
     logger.info(
-        "%s aperture obstructed for %i / %i sampled dome positions",
+        "%s aperture fully obstructed for %i / %i sampled dome positions",
         aperture.identifier,
         n_obstructed,
         n_azimuths,
@@ -120,8 +124,46 @@ def process_batch(
 
     batch_result.to_hdf5(file=output_path)
 
-    if visualise and batch_result.ratios.shape[:2] == (1, 1):
+    if visualise:
         plot_batch_obstruction(batch_result.ratios[0, 0, :], batch_result.az)
+
+
+def process_batch(
+    ha_values: np.ndarray,
+    dec_values: np.ndarray,
+    az_values: np.ndarray,
+    aperture: Aperture,
+    dome: DomeInfo,
+    output_path: Path | None,
+):
+    """
+    Calculate the obstruction for multiple dome orientation and multiple telescope pointing.
+
+    :param ha: telescope hour angle (deg)
+    :param dec: telescope declination (deg)
+    :param az_values: list of dome orientations (deg)
+    :param aperture: aperture configuration
+    :param dome: dome properties
+    :param output_path: path to the HDF5 file that we write the output to
+    """
+    batch_result = batch_calculate_obstruction(
+        ha_values, dec_values, az_values, aperture, dome
+    )
+
+    # Display the fraction of obstructed rays for each sampled dome orientation
+    is_obstructed = np.isclose(batch_result.ratios, 1.0)
+
+    n_samples = batch_result.ratios.size
+    n_obstructed = is_obstructed.sum()
+
+    logger.info(
+        "%s aperture fully obstructed for %i / %i sampled telescope pointings and dome positions",
+        aperture.identifier,
+        n_obstructed,
+        n_samples,
+    )
+
+    batch_result.to_hdf5(file=output_path)
 
 
 def main():
@@ -158,7 +200,7 @@ def main():
 
     match args.command:
         case "calc":
-            process_single_azimuth(
+            process_calc(
                 args.ha,
                 args.dec,
                 args.az,
@@ -167,7 +209,7 @@ def main():
                 visualise=args.inspect,
             )
         case "scan":
-            process_batch(
+            process_scan(
                 args.ha,
                 args.dec,
                 args.az_range,
@@ -184,7 +226,6 @@ def main():
                 aperture,
                 dome_info,
                 args.output,
-                visualise=False,
             )
         case _:
             raise ValueError("unknown mocca command")
