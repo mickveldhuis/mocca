@@ -122,7 +122,8 @@ def process_scan(
         n_azimuths,
     )
 
-    batch_result.to_hdf5(file=output_path)
+    if output_path:
+        batch_result.to_hdf5(output_path)
 
     if visualise:
         plot_batch_obstruction(batch_result.ratios[0, 0, :], batch_result.az)
@@ -163,7 +164,10 @@ def process_batch(
         n_samples,
     )
 
-    batch_result.to_hdf5(file=output_path)
+    if output_path:
+        batch_result.to_hdf5(output_path)
+    else:
+        logger.warning("output not saved...")
 
 
 def main():
