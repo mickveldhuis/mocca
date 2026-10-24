@@ -120,10 +120,7 @@ def process_batch(
 
     batch_result.to_hdf5(file=output_path)
 
-    if visualise:
-        # FIXME: currently the batch calculation produces a cube of shape (1, 1, N),
-        # but this won't hold in the future when we allow processing multiple (ha, dec)
-        # pairs simultaneously.
+    if visualise and batch_result.ratios.shape[:2] == (1, 1):
         plot_batch_obstruction(batch_result.ratios[0, 0, :], batch_result.az)
 
 
