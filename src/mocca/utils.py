@@ -1,11 +1,12 @@
 import numpy as np
 
 
-def sample_unit_disk(sample_rate, r_min: float = 0.0) -> np.ndarray:
+def sample_unit_disk(sample_rate: int, r_min: float = 0.0) -> np.ndarray:
     """
     Equidistant disk sampling based on:
     http://www.holoborodko.com/pavel/2015/07/23/generating-equidistant-points-on-unit-disk/
 
+    :param sample_rate: number of radial circles
     :param r_min: inner radius of the unit circle that's left unsampled
     :returns: an array of xy coordinate samples with shape (2, N)
     """
