@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+from matplotlib.ticker import PercentFormatter
 
 from mocca.aperture import Aperture
 from mocca.utils import sample_unit_disk
@@ -68,26 +69,25 @@ def plot_batch_obstruction(
     fig = plt.figure(figsize=(5, 5), num="MOCCA - Batch Visualisation")
     frame = fig.add_subplot(1, 1, 1, polar=True)
 
-    frame.set_title("Percentage obstruction for sampled dome azimuths", fontsize=12)
-
     az = np.radians(azimuths)
-    perc = 100.0 * ratios
-    frame.plot(az, perc, ls="", marker="*", ms=6, color="black")
+    frame.plot(az, ratios, ls="", marker="*", ms=6, color="black")
 
     az_closed = np.concatenate([az, [az[-1], az[0]]])
-    perc_closed = np.concatenate([perc, [0, 0]])
+    r_closed = np.concatenate([ratios, [0, 0]])
     frame.fill(
         az_closed,
-        perc_closed,
+        r_closed,
         alpha=0.2,
         color="red",
     )
 
-    perc_min = 0.0
-    perc_max = 120.0
-    frame.set_rlim(perc_min, perc_max)
+    r_min = 0.0
+    r_max = 1.2
+    frame.set_rlim(r_min, r_max)
+    frame.set_rlabel_position(90)
 
-    frame.set_rticks(np.arange(perc_min, perc_max, 20.0))
+    frame.set_rticks(np.arange(r_min, r_max, 0.2))
+    frame.yaxis.set_major_formatter(PercentFormatter(1))  # Note: y axis == r axis
 
     frame.grid(True)
     frame.set_aspect("equal")
