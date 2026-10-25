@@ -1,23 +1,6 @@
 import numpy as np
 
 
-def vec4(x: float, y: float, z: float) -> np.ndarray:
-    """
-    Return a 4-element vector, appropriate
-    for coordinate transformations.
-    """
-    return np.array([x, y, z, 1])
-
-
-def vec3(v4: np.ndarray) -> np.ndarray:
-    """
-    Convert a 4-element vector to a 3-element vector.
-    """
-    v3 = v4[:3].reshape(3)
-
-    return v3
-
-
 def translation(x: float, y: float, z: float) -> np.ndarray:
     """
     Translate a vector (x', y', z', 1) by x,
