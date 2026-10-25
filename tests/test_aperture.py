@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from mocca.aperture import create_aperture
@@ -79,7 +80,7 @@ def reference_finder_transformation(telescope_info, reference_guider_transformat
 
 def validate_aperture_origin_and_direction(
     aperture_type: str,
-    reference_transformation: np.ndarray,
+    reference_transformation: npt.NDArray[np.double],
     telescope_info: TelescopeInfo,
     ha: float = 0.0,
     dec: float = 0.0,
@@ -148,3 +149,27 @@ def test_compare_aperture_origin_and_direction_to_reference(
             )
         case _:
             pytest.xfail(f"{aperture_type} not supported")
+
+
+def test_batch_sampling(telescope_info, dome_info):
+    aperture_type = "telescope"  # primary aperture identifier
+    aperture = create_aperture(aperture_type, 5, telescope_info)
+
+    n_ha = 5
+    n_dec = 3
+    ha_values = np.linspace(-2, 2, n_ha)
+    dec_values = np.linspace(0, 2, n_dec)
+
+    ray_origins = aperture.sample(ha_values, dec_values)
+
+    print(ray_origins.shape)
+
+    # assert ray_origins.shape == (n_ha, n_dec)
+
+
+# def test_batch_directions(telescope_info, dome_info):
+#     aperture_type = "telescope"  # primary aperture identifier
+#     aperture = create_aperture(aperture_type, 5, telescope_info)
+#
+#     pointing = aperture.direction(ha, dec)
+#     validate_ray_direction(pointing)

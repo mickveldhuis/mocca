@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from mocca.mount import CompositeMount, EquatorialMount, Transformable
@@ -39,7 +40,8 @@ def north_pole_mount():
 
 
 def validate_position_vector(
-    transformation_matrix: np.ndarray, expected_vector: np.ndarray
+    transformation_matrix: npt.NDArray[np.double],
+    expected_vector: npt.NDArray[np.double],
 ):
     """
     The third column of the transformation matrix gives
@@ -64,8 +66,8 @@ def validate_direction_vector(transformation_matrix, expected_vector):
 
 def validate_position_and_direction_vectors(
     mount: Transformable,
-    expected_position: np.ndarray,
-    expected_direction: np.ndarray,
+    expected_position: npt.NDArray[np.double],
+    expected_direction: npt.NDArray[np.double],
     ha: float = 0.0,
     dec: float = 0.0,
 ):

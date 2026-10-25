@@ -30,4 +30,5 @@ dev = [
   "pre-commit",
   "py-spy",
   "pytest>=9.1.1",
+  "ty>=0.0.91",
 ]

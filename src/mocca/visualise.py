@@ -8,7 +8,7 @@ from mocca.utils import sample_unit_disk
 
 def plot_aperture_obstruction(
     aperture: Aperture,
-    is_blocked: npt.NDArray[np.single],
+    is_blocked: npt.NDArray[np.double],
     dome_az: float,
 ) -> None:
     """Plot the aperture w/ obstructed sample points."""
@@ -62,7 +62,7 @@ def plot_aperture_obstruction(
 
 
 def plot_batch_obstruction(
-    ratios: npt.NDArray[np.single], azimuths: npt.NDArray[np.single]
+    ratios: npt.NDArray[np.double], azimuths: npt.NDArray[np.double]
 ):
     """Display the aperture obstruction for the sampled azimuth angles on a polar graph."""
     fig = plt.figure(figsize=(5, 5), num="MOCCA - Batch Visualisation")
