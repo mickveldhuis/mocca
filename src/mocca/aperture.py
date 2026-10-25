@@ -94,6 +94,9 @@ class Aperture:
         :param dec: declination in degrees
         :returns: aperture-to-dome transformation matrix
         """
+        # TODO: might need to add meshgrid(ha, dec, indexing="ij") to support
+        # multiple HA, Dec values with "batch matrices" of shape (N, 4, 4); or
+        # keep separate HA and Dec axes, and get matrices of shape (n_ha, n_dec, 4, 4)
         return self.mount.transformation(ha, dec)
 
     def origin(self, ha, dec):
