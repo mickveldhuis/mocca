@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
 
 from mocca.aperture import Aperture
 from mocca.utils import sample_unit_disk
@@ -7,7 +8,7 @@ from mocca.utils import sample_unit_disk
 
 def plot_aperture_obstruction(
     aperture: Aperture,
-    is_blocked: np.ndarray,
+    is_blocked: npt.NDArray[np.single],
     dome_az: float,
 ) -> None:
     """Plot the aperture w/ obstructed sample points."""
@@ -60,7 +61,9 @@ def plot_aperture_obstruction(
     plt.show()
 
 
-def plot_batch_obstruction(ratios: np.ndarray, azimuths: np.ndarray):
+def plot_batch_obstruction(
+    ratios: npt.NDArray[np.single], azimuths: npt.NDArray[np.single]
+):
     """Display the aperture obstruction for the sampled azimuth angles on a polar graph."""
     fig = plt.figure(figsize=(5, 5), num="MOCCA - Batch Visualisation")
     frame = fig.add_subplot(1, 1, 1, polar=True)

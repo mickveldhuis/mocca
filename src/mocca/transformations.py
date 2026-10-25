@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 
 def translation(x: float, y: float, z: float) -> np.ndarray:
@@ -33,7 +34,7 @@ def rot_x(angle: float) -> np.ndarray:
     )
 
 
-def rot_x_nd(angles: np.ndarray):
+def rot_x_nd(angles: npt.NDArray[np.double]):
     """
     Rotate a vector (x, y, z, 1) about the x-axis
     in a right-handed coordinate system.
@@ -69,7 +70,7 @@ def rot_y(angle: float) -> np.ndarray:
     )
 
 
-def rot_y_nd(angles: np.ndarray):
+def rot_y_nd(angles: npt.NDArray[np.double]):
     """
     Rotate a vector (x, y, z, 1) about the y-axis
     in a right-handed coordinate system.
@@ -105,7 +106,7 @@ def rot_z(angle: float) -> np.ndarray:
     )
 
 
-def rot_z_nd(angles: np.ndarray):
+def rot_z_nd(angles: npt.NDArray[np.double]):
     """
     Rotate a vector (x, y, z, 1) about the z-axis
     in a right-handed coordinate system.
@@ -121,6 +122,4 @@ def rot_z_nd(angles: np.ndarray):
     mat[..., 1, 0], mat[..., 1, 1] = s, c
     mat[..., 2, 2] = mat[..., 3, 3] = 1.0
 
-    # is_scalar = angle.ndim == 0
-    # return mat[0] if is_scalar else mat
     return mat

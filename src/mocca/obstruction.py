@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import numpy.typing as npt
 from pytransform3d import transformations as pt
 
 from mocca.aperture import Aperture
@@ -11,7 +12,7 @@ from mocca.types import BatchObstructionResult, DomeInfo, ObstructionResult
 logger = logging.getLogger("MOCCA")
 
 
-def validate_ray_origins(origins: np.ndarray, dome_radius) -> None:
+def validate_ray_origins(origins: npt.NDArray[np.double], dome_radius: float) -> None:
     """
     Check whether the rays are originating from inside the dome.
 
@@ -28,7 +29,7 @@ def validate_ray_origins(origins: np.ndarray, dome_radius) -> None:
         )
 
 
-def validate_ray_direction(direction: np.ndarray) -> None:
+def validate_ray_direction(direction: npt.NDArray[np.double]) -> None:
     """Check whether the direction vector is of unit length."""
     length = np.linalg.norm(direction)
     if not np.isclose(length, 1.0):
@@ -38,7 +39,10 @@ def validate_ray_direction(direction: np.ndarray) -> None:
 
 
 def aperture_obstruction_condition(
-    x: np.ndarray, y: np.ndarray, dome_radius: float, dome_slit_width: float
+    x: npt.NDArray[np.double],
+    y: npt.NDArray[np.double],
+    dome_radius: float,
+    dome_slit_width: float,
 ) -> bool:
     """
     Return whether the ray is blocked by the dome's opening slit.
@@ -64,7 +68,10 @@ def aperture_obstruction_condition(
 
 
 def batch_aperture_obstruction_condition(
-    x: np.ndarray, y: np.ndarray, dome_radius: float, dome_slit_width: float
+    x: npt.NDArray[np.double],
+    y: npt.NDArray[np.double],
+    dome_radius: float,
+    dome_slit_width: float,
 ) -> bool:
     """
     Return whether the ray is blocked by the dome's opening slit.
@@ -90,7 +97,7 @@ def batch_aperture_obstruction_condition(
 
 
 def correct_for_dome_rotation(
-    position: np.ndarray, dome_azimuth: np.ndarray
+    position: npt.NDArray[np.double], dome_azimuth: npt.NDArray[np.double]
 ) -> np.ndarray:
     """
     Rotate the intersections points by the dome azimuth, such that we can
@@ -115,7 +122,7 @@ def correct_for_dome_rotation(
 
 
 def batch_correct_for_dome_rotation(
-    position: np.ndarray, dome_azimuths: np.ndarray
+    position: npt.NDArray[np.double], dome_azimuths: npt.NDArray[np.double]
 ) -> np.ndarray:
     """
     Rotate the intersections points by the dome azimuth, such that we can
@@ -151,7 +158,10 @@ def batch_correct_for_dome_rotation(
 
 
 def check_obstruction(
-    origin: np.ndarray, direction: np.ndarray, azimuth: float, dome: DomeInfo
+    origin: npt.NDArray[np.double],
+    direction: npt.NDArray[np.double],
+    azimuth: float,
+    dome: DomeInfo,
 ) -> bool:
     """
     Checks whether an individual ray is blocked.
@@ -176,7 +186,10 @@ def check_obstruction(
 
 
 def batch_check_obstruction(
-    origins: np.ndarray, direction: np.ndarray, azimuths: np.ndarray, dome: DomeInfo
+    origins: npt.NDArray[np.double],
+    direction: npt.NDArray[np.double],
+    azimuths: npt.NDArray[np.double],
+    dome: DomeInfo,
 ) -> bool:
     """
     Checks whether an individual ray is blocked.
@@ -252,7 +265,11 @@ def calculate_obstruction(
 
 
 def batch_calculate_obstruction(
-    ha: float, dec: float, dome_azimuths: np.ndarray, aperture: Aperture, info: DomeInfo
+    ha: float,
+    dec: float,
+    dome_azimuths: npt.NDArray[np.double],
+    aperture: Aperture,
+    info: DomeInfo,
 ) -> BatchObstructionResult:
     """
     Compute the % obstruction of the aperture by the dome.

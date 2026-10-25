@@ -8,6 +8,7 @@ from typing import Self
 
 import h5py
 import numpy as np
+import numpy.typing as npt
 
 logger = logging.getLogger("MOCCA")
 
@@ -105,12 +106,12 @@ ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])
 
 @dataclass
 class BatchObstructionResult:
-    ratios: np.ndarray
-    masks: np.ndarray
+    ratios: npt.NDArray[np.double]
+    masks: npt.NDArray[np.bool]
 
-    ha: np.ndarray
-    dec: np.ndarray
-    az: np.ndarray
+    ha: npt.NDArray[np.double]
+    dec: npt.NDArray[np.double]
+    az: npt.NDArray[np.double]
 
     def to_hdf5(self, file: Path) -> None:
         """

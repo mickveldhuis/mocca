@@ -1,13 +1,18 @@
 import numpy as np
+import numpy.typing as npt
 
 
-def calculate_hit(origin: np.ndarray, direction: np.ndarray, t: float) -> np.ndarray:
+def calculate_hit(
+    origin: npt.NDArray[np.double], direction: npt.NDArray[np.double], t: float
+) -> np.ndarray:
     """Return the position of a hit, i.e. an intersection."""
     return origin + t * direction
 
 
 def find_ray_cylinder_intersection(
-    origin: np.ndarray, direction: np.ndarray, dome_radius: float
+    origin: npt.NDArray[np.double],
+    direction: npt.NDArray[np.double],
+    dome_radius: float,
 ) -> float | None:
     """
     Find a possible ray-wall intersection.
@@ -34,7 +39,9 @@ def find_ray_cylinder_intersection(
 
 
 def find_ray_cylinder_intersections(
-    origins: np.ndarray, directions: np.ndarray, dome_radius: float
+    origins: npt.NDArray[np.double],
+    directions: npt.NDArray[np.double],
+    dome_radius: float,
 ) -> float:
     """
     Find a possible ray-wall intersection for multiple origins.
@@ -63,7 +70,10 @@ def find_ray_cylinder_intersections(
 
 
 def find_ray_hemisphere_intersection(
-    origin: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
+    origin: npt.NDArray[np.double],
+    direction: npt.NDArray[np.double],
+    dome_radius: float,
+    dome_extent: float,
 ) -> float | None:
     """
     Find a possible ray-hemisphere intersection.
@@ -90,7 +100,10 @@ def find_ray_hemisphere_intersection(
 
 
 def find_ray_hemisphere_intersections(
-    origins: np.ndarray, directions: np.ndarray, dome_radius: float, dome_extent: float
+    origins: npt.NDArray[np.double],
+    directions: npt.NDArray[np.double],
+    dome_radius: float,
+    dome_extent: float,
 ) -> float:
     """
     Find a possible ray-hemisphere intersection.
@@ -116,7 +129,10 @@ def find_ray_hemisphere_intersections(
 
 
 def find_ray_dome_intersection(
-    origin: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
+    origin: npt.NDArray[np.double],
+    direction: npt.NDArray[np.double],
+    dome_radius: float,
+    dome_extent: float,
 ) -> np.ndarray | None:
     """
     Find ray-dome intersection when the rays hit the hemispherical cap of the dome,
@@ -162,7 +178,10 @@ def find_ray_dome_intersection(
 
 
 def find_ray_dome_intersections(
-    origins: np.ndarray, direction: np.ndarray, dome_radius: float, dome_extent: float
+    origins: npt.NDArray[np.double],
+    direction: npt.NDArray[np.double],
+    dome_radius: float,
+    dome_extent: float,
 ) -> np.ndarray:
     """
     Find ray-dome intersection when the rays hit the hemispherical cap of the dome,

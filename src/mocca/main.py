@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 
 from mocca.aperture import Aperture, create_aperture
 from mocca.cli import parse_cli_arguments
@@ -89,7 +90,7 @@ def process_calc(
 def process_scan(
     ha: float,
     dec: float,
-    az_values: np.ndarray,
+    az_values: npt.NDArray[np.double],
     aperture: Aperture,
     dome: DomeInfo,
     output_path: Path | None,
@@ -130,9 +131,9 @@ def process_scan(
 
 
 def process_batch(
-    ha_values: np.ndarray,
-    dec_values: np.ndarray,
-    az_values: np.ndarray,
+    ha_values: npt.NDArray[np.double],
+    dec_values: npt.NDArray[np.double],
+    az_values: npt.NDArray[np.double],
     aperture: Aperture,
     dome: DomeInfo,
     output_path: Path | None,
