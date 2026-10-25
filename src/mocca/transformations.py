@@ -50,22 +50,21 @@ def rot_x(angle: float) -> np.ndarray:
     )
 
 
-def rot_x_1d(angles: np.ndarray):
+def rot_x_nd(angles: np.ndarray):
     """
     Rotate a vector (x, y, z, 1) about the x-axis
     in a right-handed coordinate system.
 
-    :param angles: 1d array of N angles in degrees
-    :returns: (N, 4, 4) array of 4x4 transformation matrices
+    :param angles: N-dim array of angles in degrees
+    :returns: (..., 4, 4) array of 4x4 transformation matrices
     """
-    angles = np.asarray(angles, dtype=float)
     a = np.atleast_1d(np.radians(angles))
     c, s = np.cos(a), np.sin(a)
 
-    mat = np.zeros((a.size, 4, 4))
-    mat[:, 1, 1], mat[:, 1, 2] = c, -s
-    mat[:, 2, 1], mat[:, 2, 2] = s, c
-    mat[:, 0, 0] = mat[:, 3, 3] = 1.0
+    mat = np.zeros((*a.shape, 4, 4))
+    mat[..., 1, 1], mat[..., 1, 2] = c, -s
+    mat[..., 2, 1], mat[..., 2, 2] = s, c
+    mat[..., 0, 0] = mat[..., 3, 3] = 1.0
 
     return mat
 
@@ -87,22 +86,21 @@ def rot_y(angle: float) -> np.ndarray:
     )
 
 
-def rot_y_1d(angles: np.ndarray):
+def rot_y_nd(angles: np.ndarray):
     """
     Rotate a vector (x, y, z, 1) about the y-axis
     in a right-handed coordinate system.
 
-    :param angles: 1d array of N angles in degrees
-    :returns: (N, 4, 4) array of 4x4 transformation matrices
+    :param angles: N-dim array of angles in degrees
+    :returns: (..., 4, 4) array of 4x4 transformation matrices
     """
-    angles = np.asarray(angles, dtype=float)
     a = np.atleast_1d(np.radians(angles))
     c, s = np.cos(a), np.sin(a)
 
-    mat = np.zeros((a.size, 4, 4))
-    mat[:, 0, 0], mat[:, 0, 2] = c, s
-    mat[:, 2, 0], mat[:, 2, 2] = -s, c
-    mat[:, 1, 1] = mat[:, 3, 3] = 1.0
+    mat = np.zeros((*a.shape, 4, 4))
+    mat[..., 0, 0], mat[..., 0, 2] = c, s
+    mat[..., 2, 0], mat[..., 2, 2] = -s, c
+    mat[..., 1, 1] = mat[..., 3, 3] = 1.0
 
     return mat
 
@@ -124,22 +122,21 @@ def rot_z(angle: float) -> np.ndarray:
     )
 
 
-def rot_z_1d(angles: np.ndarray):
+def rot_z_nd(angles: np.ndarray):
     """
     Rotate a vector (x, y, z, 1) about the z-axis
     in a right-handed coordinate system.
 
-    :param angles: 1d array of N angles in degrees
-    :returns: (N, 4, 4) array of 4x4 transformation matrices
+    :param angles: N-dim array of angles in degrees
+    :returns: (..., 4, 4) array of 4x4 transformation matrices
     """
-    angles = np.asarray(angles, dtype=float)
     a = np.atleast_1d(np.radians(angles))
     c, s = np.cos(a), np.sin(a)
 
     mat = np.zeros((a.size, 4, 4))
-    mat[:, 0, 0], mat[:, 0, 1] = c, -s
-    mat[:, 1, 0], mat[:, 1, 1] = s, c
-    mat[:, 2, 2] = mat[:, 3, 3] = 1.0
+    mat[..., 0, 0], mat[..., 0, 1] = c, -s
+    mat[..., 1, 0], mat[..., 1, 1] = s, c
+    mat[..., 2, 2] = mat[..., 3, 3] = 1.0
 
     # is_scalar = angle.ndim == 0
     # return mat[0] if is_scalar else mat
