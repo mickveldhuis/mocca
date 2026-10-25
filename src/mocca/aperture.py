@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 from pytransform3d import transformations as pt
 
 from mocca.mount import CompositeMount, EquatorialMount, Transformable
@@ -85,7 +86,7 @@ class Aperture:
 
         self.identifier = identifier
 
-    def transformation(self, ha: float, dec: float) -> np.ndarray:
+    def transformation(self, ha: float, dec: float) -> npt.NDArray[np.double]:
         """
         Calculate the transformation matrix from the aperture
         to the dome frame using the appropriate mount.
@@ -99,7 +100,7 @@ class Aperture:
         # keep separate HA and Dec axes, and get matrices of shape (n_ha, n_dec, 4, 4)
         return self.mount.transformation(ha, dec)
 
-    def origin(self, ha, dec):
+    def origin(self, ha: float, dec: float) -> npt.NDArray[np.double]:
         """
         Return the origin of the aperture in the dome
         frame.
@@ -114,7 +115,7 @@ class Aperture:
         # transformation matrix.
         return aperture_transformation[:3, 3]
 
-    def direction(self, ha: float, dec: float) -> np.ndarray:
+    def direction(self, ha: float, dec: float) -> npt.NDArray[np.double]:
         """
         Return the pointing direction of the aperture
         in the frame of the dome.
@@ -129,7 +130,7 @@ class Aperture:
         # the 2nd component of the transformation matrix.
         return aperture_transformation[:3, 1]
 
-    def sample(self, ha: float, dec: float) -> np.ndarray:
+    def sample(self, ha: float, dec: float) -> npt.NDArray[np.double]:
         """
         Compute the position of a vector in
         the aperture's frame.

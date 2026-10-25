@@ -43,3 +43,17 @@ def test_rot_z_nd(angles):
         print(matrices[i])
 
         assert np.allclose(matrices[i], mt.rot_z(a))
+
+
+def test_trans_nd():
+    """Regression test for the n-dim translation matrix interface."""
+    distances = np.arange(10, 100, 10)
+
+    for axis in (0, 1, 2):
+        matrices = mt.trans_nd(distances, axis=axis)
+        assert matrices.shape == (distances.size, 4, 4)
+
+        for i, d in enumerate(distances):
+            print(matrices[i])
+
+            assert np.allclose(matrices[i], mt.trans(d, axis=axis))

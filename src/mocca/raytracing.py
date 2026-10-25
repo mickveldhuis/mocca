@@ -4,7 +4,7 @@ import numpy.typing as npt
 
 def calculate_hit(
     origin: npt.NDArray[np.double], direction: npt.NDArray[np.double], t: float
-) -> np.ndarray:
+) -> npt.NDArray[np.double]:
     """Return the position of a hit, i.e. an intersection."""
     return origin + t * direction
 
@@ -133,7 +133,7 @@ def find_ray_dome_intersection(
     direction: npt.NDArray[np.double],
     dome_radius: float,
     dome_extent: float,
-) -> np.ndarray | None:
+) -> npt.NDArray[np.double] | None:
     """
     Find ray-dome intersection when the rays hit the hemispherical cap of the dome,
     which, inlcuding the walls, is modelled as a capsule.
@@ -182,7 +182,7 @@ def find_ray_dome_intersections(
     direction: npt.NDArray[np.double],
     dome_radius: float,
     dome_extent: float,
-) -> np.ndarray:
+) -> npt.NDArray[np.double]:
     """
     Find ray-dome intersection when the rays hit the hemispherical cap of the dome,
     which, inlcuding the walls, is modelled as a capsule.

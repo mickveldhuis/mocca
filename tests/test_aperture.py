@@ -3,7 +3,7 @@ import numpy.typing as npt
 import pytest
 
 from mocca.aperture import create_aperture
-from mocca.transformations import rot_x, rot_y, rot_z, translation
+from mocca.transformations import rot_x, rot_y, rot_z, trans
 from mocca.types import TelescopeInfo
 
 # Store all supported aperture types to parametrize tests
@@ -23,13 +23,13 @@ def reference_telescope_transformation(telescope_info):
     Refer to Chapter 3 (Equation 13) of:
     https://fse.studenttheses.ub.rug.nl/id/eprint/25172
     """
-    H_01 = translation(0.0, 0.0, telescope_info.height)
+    H_01 = trans(telescope_info.height, axis=2)
     H_12 = (
         rot_x(90.0 - telescope_info.latitude)
         @ rot_z(-HA)
-        @ translation(0.0, 0.0, telescope_info.ha_axis_offset)
+        @ trans(telescope_info.ha_axis_offset, axis=2)
     )
-    H_23 = rot_x(DEC) @ translation(-telescope_info.dec_axis_offset, 0.0, 0.0)
+    H_23 = rot_x(DEC) @ trans(-telescope_info.dec_axis_offset, axis=0)
 
     return H_01 @ H_12 @ H_23
 
@@ -50,8 +50,8 @@ def reference_guider_transformation(telescope_info, reference_telescope_transfor
     #     0,
     #     telescope_info.guider_offset * np.sin(telescope_info.guider_angle),
     # )
-    H_34 = rot_y(telescope_info.guider_angle) @ translation(
-        0.0, 0.0, telescope_info.guider_offset
+    H_34 = rot_y(telescope_info.guider_angle) @ trans(
+        telescope_info.guider_offset, axis=2
     )
 
     return reference_telescope_transformation @ H_34
@@ -73,7 +73,7 @@ def reference_finder_transformation(telescope_info, reference_guider_transformat
     #     0,
     #     telescope_info.finder_offset * np.sin(telescope_info.finder_angle),
     # )
-    H_45 = translation(-telescope_info.finder_offset, 0.0, 0.0)
+    H_45 = trans(-telescope_info.finder_offset, axis=0)
 
     return reference_guider_transformation @ H_45
 
@@ -151,20 +151,20 @@ def test_compare_aperture_origin_and_direction_to_reference(
             pytest.xfail(f"{aperture_type} not supported")
 
 
-def test_batch_sampling(telescope_info, dome_info):
-    aperture_type = "telescope"  # primary aperture identifier
-    aperture = create_aperture(aperture_type, 5, telescope_info)
-
-    n_ha = 5
-    n_dec = 3
-    ha_values = np.linspace(-2, 2, n_ha)
-    dec_values = np.linspace(0, 2, n_dec)
-
-    ray_origins = aperture.sample(ha_values, dec_values)
-
-    print(ray_origins.shape)
-
-    # assert ray_origins.shape == (n_ha, n_dec)
+# def test_batch_sampling(telescope_info, dome_info):
+#     aperture_type = "telescope"  # primary aperture identifier
+#     aperture = create_aperture(aperture_type, 5, telescope_info)
+#
+#     n_ha = 5
+#     n_dec = 3
+#     ha_values = np.linspace(-2, 2, n_ha)
+#     dec_values = np.linspace(0, 2, n_dec)
+#
+#     ray_origins = aperture.sample(ha_values, dec_values)
+#
+#     print(ray_origins.shape)
+#
+#     # assert ray_origins.shape == (n_ha, n_dec)
 
 
 # def test_batch_directions(telescope_info, dome_info):

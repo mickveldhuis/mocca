@@ -98,7 +98,7 @@ def batch_aperture_obstruction_condition(
 
 def correct_for_dome_rotation(
     position: npt.NDArray[np.double], dome_azimuth: npt.NDArray[np.double]
-) -> np.ndarray:
+) -> npt.NDArray[np.double]:
     """
     Rotate the intersections points by the dome azimuth, such that we can
     validate the obstruction condition assuming that the slit is parallel
@@ -123,7 +123,7 @@ def correct_for_dome_rotation(
 
 def batch_correct_for_dome_rotation(
     position: npt.NDArray[np.double], dome_azimuths: npt.NDArray[np.double]
-) -> np.ndarray:
+) -> npt.NDArray[np.double]:
     """
     Rotate the intersections points by the dome azimuth, such that we can
     validate the obstruction condition assuming that the slit is parallel

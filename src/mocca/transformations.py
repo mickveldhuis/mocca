@@ -2,22 +2,53 @@ import numpy as np
 import numpy.typing as npt
 
 
-def translation(x: float, y: float, z: float) -> np.ndarray:
+def trans(t: float, axis: int = 0) -> npt.NDArray[np.double]:
     """
-    Translate a vector (x', y', z', 1) by x,
-    y, and z along their respective axes.
+    Translate a vector along the x, y, or z axis.
+
+    :param t: distance along the specified axis
+    :param axis: axis (0, 1, or 2) along which to apply the translation
+    :returns: a (4, 4) translation matrix
     """
-    return np.array(
-        [
-            [1, 0, 0, x],
-            [0, 1, 0, y],
-            [0, 0, 1, z],
-            [0, 0, 0, 1],
-        ]
-    )
+    if axis >= 3:
+        raise IndexError(
+            f"axes {axis} out of range; either select axis 0, 1, or 2, corresponding to the x, y, or z axes"
+        )
+
+    mat = np.eye(4, dtype=np.double)
+    mat[axis, 3] = t
+
+    return mat
 
 
-def rot_x(angle: float) -> np.ndarray:
+def trans_nd(
+    distances: npt.NDArray[np.double], axis: int = 0
+) -> npt.NDArray[np.double]:
+    """
+    Translate a vector by a set of distances along the x, y, or z axis.
+
+    :param distances: distances along the specified axis
+    :param axis: axis (0, 1, or 2) along which to apply the translation
+    :returns: (..., 4, 4) translation matrices
+    """
+    if axis >= 3:
+        raise IndexError(
+            f"axes {axis} out of range; either select axis 0, 1, or 2, corresponding to the x, y, or z axes"
+        )
+
+    t = np.atleast_1d(distances)
+
+    mat = np.zeros((*t.shape, 4, 4))
+    mat[..., axis, 3] = t
+
+    # Set all diagonal elements to one
+    diag_idx = np.arange(4)
+    mat[..., diag_idx, diag_idx] = 1.0
+
+    return mat
+
+
+def rot_x(angle: float) -> npt.NDArray[np.double]:
     """
     Rotate a vector (x, y, z, 1) about the x-axis
     in a right-handed coordinate system.
@@ -34,7 +65,7 @@ def rot_x(angle: float) -> np.ndarray:
     )
 
 
-def rot_x_nd(angles: npt.NDArray[np.double]):
+def rot_x_nd(angles: npt.NDArray[np.double]) -> npt.NDArray[np.double]:
     """
     Rotate a vector (x, y, z, 1) about the x-axis
     in a right-handed coordinate system.
@@ -53,7 +84,7 @@ def rot_x_nd(angles: npt.NDArray[np.double]):
     return mat
 
 
-def rot_y(angle: float) -> np.ndarray:
+def rot_y(angle: float) -> npt.NDArray[np.double]:
     """
     Rotate a vector (x, y, z, 1) about the y-axis
     in a right-handed coordinate system.
@@ -70,7 +101,7 @@ def rot_y(angle: float) -> np.ndarray:
     )
 
 
-def rot_y_nd(angles: npt.NDArray[np.double]):
+def rot_y_nd(angles: npt.NDArray[np.double]) -> npt.NDArray[np.double]:
     """
     Rotate a vector (x, y, z, 1) about the y-axis
     in a right-handed coordinate system.
@@ -89,7 +120,7 @@ def rot_y_nd(angles: npt.NDArray[np.double]):
     return mat
 
 
-def rot_z(angle: float) -> np.ndarray:
+def rot_z(angle: float) -> npt.NDArray[np.double]:
     """
     Rotate a vector (x, y, z, 1) about the z-axis
     in a right-handed coordinate system.
@@ -106,7 +137,7 @@ def rot_z(angle: float) -> np.ndarray:
     )
 
 
-def rot_z_nd(angles: npt.NDArray[np.double]):
+def rot_z_nd(angles: npt.NDArray[np.double]) -> npt.NDArray[np.double]:
     """
     Rotate a vector (x, y, z, 1) about the z-axis
     in a right-handed coordinate system.
