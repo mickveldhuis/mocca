@@ -151,25 +151,23 @@ def test_compare_aperture_origin_and_direction_to_reference(
             pytest.xfail(f"{aperture_type} not supported")
 
 
-# def test_batch_sampling(telescope_info, dome_info):
-#     aperture_type = "telescope"  # primary aperture identifier
-#     aperture = create_aperture(aperture_type, 5, telescope_info)
-#
-#     n_ha = 5
-#     n_dec = 3
-#     ha_values = np.linspace(-2, 2, n_ha)
-#     dec_values = np.linspace(0, 2, n_dec)
-#
-#     ray_origins = aperture.sample(ha_values, dec_values)
-#
-#     print(ray_origins.shape)
-#
-#     # assert ray_origins.shape == (n_ha, n_dec)
+def test_batch_dimensions(telescope_info, dome_info):
+    """Check that the ray origins, directions, and samples have the expected shape."""
+    aperture_type = "telescope"  # primary aperture identifier
+    mock_rate = 5
+    aperture = create_aperture(aperture_type, mock_rate, telescope_info)
 
+    n_ha = 3
+    n_dec = 2
+    ha = np.linspace(HA, 15, n_ha)
+    dec = np.linspace(DEC, -5, n_dec)
 
-# def test_batch_directions(telescope_info, dome_info):
-#     aperture_type = "telescope"  # primary aperture identifier
-#     aperture = create_aperture(aperture_type, 5, telescope_info)
-#
-#     pointing = aperture.direction(ha, dec)
-#     validate_ray_direction(pointing)
+    origins = aperture.origin(ha, dec)
+    assert origins.shape == (n_ha, n_dec, 3)
+
+    directions = aperture.origin(ha, dec)
+    assert directions.shape == (n_ha, n_dec, 3)
+
+    samples = aperture.sample(ha, dec)
+    n_rays = 162  # corresponds to a rate of 5
+    assert samples.shape == (n_ha, n_dec, 3, n_rays)
