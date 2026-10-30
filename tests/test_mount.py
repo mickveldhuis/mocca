@@ -154,3 +154,18 @@ def test_composite_mount_with_angle(north_pole_mount, dec, direction, position):
     mount = CompositeMount(north_pole_mount, offset, angle)
 
     validate_position_and_direction_vectors(mount, position, direction, dec=dec)
+
+
+def test_evaluate_transformation_for_multiple_pointings(north_pole_mount):
+    ha = np.linspace(-45, 45, 10)
+    dec = np.linspace(40, 70, 4)
+
+    transformations = north_pole_mount.transformation(ha, dec)
+    assert transformations.shape == (ha.size, dec.size, 4, 4)
+
+    offset = 1.0
+    angle = 180
+    mount = CompositeMount(north_pole_mount, offset, angle)
+
+    mount_transformations = mount.transformation(ha, dec)
+    assert mount_transformations.shape == (ha.size, dec.size, 4, 4)

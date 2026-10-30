@@ -70,7 +70,12 @@ class EquatorialMount(Transformable):
         H_23 = rot_x_nd(dec) @ trans_nd(-self.dec_axis_offset, axis=0)
         print("H_23 =", H_23.shape)
 
-        H = H_01[np.newaxis, np.newaxis, :, :] @ H_12 @ H_23
+        # Ensure that each array (of matrices) has shape (ha, dec, 4, 4)
+        H = (
+            H_01[np.newaxis, np.newaxis, :, :]
+            @ H_12[:, np.newaxis, :, :]
+            @ H_23[np.newaxis, :, :, :]
+        )
 
         return H
 
@@ -112,6 +117,7 @@ class CompositeMount(Transformable):
         """
         H_base = self.base_mount.transformation(ha, dec)
 
+        # TODO: do we need to broadcast H_offset?
         H_offset = rot_y_nd(self.angle) @ trans_nd(self.offset, axis=2)
 
         return H_base @ H_offset
