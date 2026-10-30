@@ -60,15 +60,12 @@ class EquatorialMount(Transformable):
         :returns: aperture-to-dome transformation matrix (N, M, 4, 4)
         """
         H_01 = trans(self.height, axis=2)
-        print("H_01 =", H_01.shape)
         H_12 = (
             rot_x_nd(90.0 - self.latitude)
             @ rot_z_nd(-ha)
             @ trans_nd(self.ha_axis_offset, axis=2)
         )
-        print("H_02 =", H_12.shape)
         H_23 = rot_x_nd(dec) @ trans_nd(-self.dec_axis_offset, axis=0)
-        print("H_23 =", H_23.shape)
 
         # Ensure that each array (of matrices) has shape (ha, dec, 4, 4)
         H = (
