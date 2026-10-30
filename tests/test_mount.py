@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from mocca.mount import CompositeMount, EquatorialMount, Transformable
@@ -39,7 +40,8 @@ def north_pole_mount():
 
 
 def validate_position_vector(
-    transformation_matrix: np.ndarray, expected_vector: np.ndarray
+    transformation_matrix: npt.NDArray[np.double],
+    expected_vector: npt.NDArray[np.double],
 ):
     """
     The third column of the transformation matrix gives
@@ -47,7 +49,7 @@ def validate_position_vector(
     """
     assert len(expected_vector) == 3
 
-    position_vector = transformation_matrix[:3, 3]
+    position_vector = transformation_matrix[..., :3, 3]
     assert np.allclose(position_vector, expected_vector)
 
 
@@ -58,14 +60,14 @@ def validate_direction_vector(transformation_matrix, expected_vector):
     """
     assert len(expected_vector) == 3
 
-    direction_vector = transformation_matrix[:3, 1]
+    direction_vector = transformation_matrix[..., :3, 1]
     assert np.allclose(direction_vector, expected_vector)
 
 
 def validate_position_and_direction_vectors(
     mount: Transformable,
-    expected_position: np.ndarray,
-    expected_direction: np.ndarray,
+    expected_position: npt.NDArray[np.double],
+    expected_direction: npt.NDArray[np.double],
     ha: float = 0.0,
     dec: float = 0.0,
 ):
@@ -152,3 +154,22 @@ def test_composite_mount_with_angle(north_pole_mount, dec, direction, position):
     mount = CompositeMount(north_pole_mount, offset, angle)
 
     validate_position_and_direction_vectors(mount, position, direction, dec=dec)
+
+
+def test_evaluate_transformation_for_multiple_pointings(north_pole_mount):
+    """
+    Check whether bulk computing the mount transformation matrices
+    yields the expected dimensions.
+    """
+    ha = np.linspace(-45, 45, 10)
+    dec = np.linspace(40, 70, 4)
+
+    transformations = north_pole_mount.transformation(ha, dec)
+    assert transformations.shape == (ha.size, dec.size, 4, 4)
+
+    offset = 1.0
+    angle = 180
+    mount = CompositeMount(north_pole_mount, offset, angle)
+
+    mount_transformations = mount.transformation(ha, dec)
+    assert mount_transformations.shape == (ha.size, dec.size, 4, 4)

@@ -1,8 +1,9 @@
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from mocca.aperture import create_aperture
-from mocca.transformations import rot_x, rot_y, rot_z, translation
+from mocca.transformations import rot_x, rot_y, rot_z, trans
 from mocca.types import TelescopeInfo
 
 # Store all supported aperture types to parametrize tests
@@ -22,13 +23,13 @@ def reference_telescope_transformation(telescope_info):
     Refer to Chapter 3 (Equation 13) of:
     https://fse.studenttheses.ub.rug.nl/id/eprint/25172
     """
-    H_01 = translation(0.0, 0.0, telescope_info.height)
+    H_01 = trans(telescope_info.height, axis=2)
     H_12 = (
         rot_x(90.0 - telescope_info.latitude)
         @ rot_z(-HA)
-        @ translation(0.0, 0.0, telescope_info.ha_axis_offset)
+        @ trans(telescope_info.ha_axis_offset, axis=2)
     )
-    H_23 = rot_x(DEC) @ translation(-telescope_info.dec_axis_offset, 0.0, 0.0)
+    H_23 = rot_x(DEC) @ trans(-telescope_info.dec_axis_offset, axis=0)
 
     return H_01 @ H_12 @ H_23
 
@@ -49,8 +50,8 @@ def reference_guider_transformation(telescope_info, reference_telescope_transfor
     #     0,
     #     telescope_info.guider_offset * np.sin(telescope_info.guider_angle),
     # )
-    H_34 = rot_y(telescope_info.guider_angle) @ translation(
-        0.0, 0.0, telescope_info.guider_offset
+    H_34 = rot_y(telescope_info.guider_angle) @ trans(
+        telescope_info.guider_offset, axis=2
     )
 
     return reference_telescope_transformation @ H_34
@@ -72,14 +73,14 @@ def reference_finder_transformation(telescope_info, reference_guider_transformat
     #     0,
     #     telescope_info.finder_offset * np.sin(telescope_info.finder_angle),
     # )
-    H_45 = translation(-telescope_info.finder_offset, 0.0, 0.0)
+    H_45 = trans(-telescope_info.finder_offset, axis=0)
 
     return reference_guider_transformation @ H_45
 
 
 def validate_aperture_origin_and_direction(
     aperture_type: str,
-    reference_transformation: np.ndarray,
+    reference_transformation: npt.NDArray[np.double],
     telescope_info: TelescopeInfo,
     ha: float = 0.0,
     dec: float = 0.0,
@@ -148,3 +149,25 @@ def test_compare_aperture_origin_and_direction_to_reference(
             )
         case _:
             pytest.xfail(f"{aperture_type} not supported")
+
+
+def test_batch_dimensions(telescope_info, dome_info):
+    """Check that the ray origins, directions, and samples have the expected shape."""
+    aperture_type = "telescope"  # primary aperture identifier
+    mock_rate = 5
+    aperture = create_aperture(aperture_type, mock_rate, telescope_info)
+
+    n_ha = 3
+    n_dec = 2
+    ha = np.linspace(HA, 15, n_ha)
+    dec = np.linspace(DEC, -5, n_dec)
+
+    origins = aperture.origin(ha, dec)
+    assert origins.shape == (n_ha, n_dec, 3)
+
+    directions = aperture.origin(ha, dec)
+    assert directions.shape == (n_ha, n_dec, 3)
+
+    samples = aperture.sample(ha, dec)
+    n_rays = 162  # corresponds to a rate of 5
+    assert samples.shape == (n_ha, n_dec, 3, n_rays)

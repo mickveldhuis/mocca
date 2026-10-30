@@ -1,5 +1,5 @@
 import numpy as np
-from pytransform3d import transformations as pt
+import numpy.typing as npt
 
 from mocca.mount import CompositeMount, EquatorialMount, Transformable
 from mocca.types import TelescopeInfo
@@ -55,7 +55,7 @@ def create_aperture(
                 identifier=aperture_type,
             )
         case _:
-            raise ValueError("Unknown aperture type")
+            raise ValueError("unknown aperture type")
 
 
 class Aperture:
@@ -85,55 +85,66 @@ class Aperture:
 
         self.identifier = identifier
 
-    def transformation(self, ha: float, dec: float) -> np.ndarray:
+    def transformation(
+        self, ha: npt.NDArray[np.double], dec: npt.NDArray[np.double]
+    ) -> npt.NDArray[np.double]:
         """
         Calculate the transformation matrix from the aperture
         to the dome frame using the appropriate mount.
 
-        :param ha: hour angle in degrees
-        :param dec: declination in degrees
-        :returns: aperture-to-dome transformation matrix
+        :param ha: hour angles (N,) in degrees
+        :param dec: declinations (M,) in degrees
+        :returns: aperture-to-dome transformation matrix (N, M, 4, 4)
         """
+        # TODO: might need to add meshgrid(ha, dec, indexing="ij") to support
+        # multiple HA, Dec values with "batch matrices" of shape (N, 4, 4); or
+        # keep separate HA and Dec axes, and get matrices of shape (n_ha, n_dec, 4, 4)
         return self.mount.transformation(ha, dec)
 
-    def origin(self, ha, dec):
+    def origin(
+        self, ha: npt.NDArray[np.double], dec: npt.NDArray[np.double]
+    ) -> npt.NDArray[np.double]:
         """
         Return the origin of the aperture in the dome
         frame.
 
-        :param ha: hour angle in degrees
-        :param dec: declination in degrees
-        :returns: origin vector in the dome frame (3,)
+        :param ha: hour angles (N,) in degrees
+        :param dec: declinations (M,) in degrees
+        :returns: origin vector in the dome frame (N, M, 3)
         """
         aperture_transformation = self.transformation(ha, dec)
 
         # The origin is equal to the 4th column of the
         # transformation matrix.
-        return aperture_transformation[:3, 3]
+        return aperture_transformation[..., :3, 3]
 
-    def direction(self, ha: float, dec: float) -> np.ndarray:
+    def direction(
+        self, ha: npt.NDArray[np.double], dec: npt.NDArray[np.double]
+    ) -> npt.NDArray[np.double]:
         """
         Return the pointing direction of the aperture
         in the frame of the dome.
 
-        :param ha: hour angle in degrees
-        :param dec: declination in degrees
-        :returns: pointing vector in the dome frame
+        :param ha: hour angles (N,) in degrees
+        :param dec: declinations (M,) in degrees
+        :returns: pointing vector in the dome frame (N, M, 3)
         """
         aperture_transformation = self.transformation(ha, dec)
 
         # The aperture points along the +y axis, which is
         # the 2nd component of the transformation matrix.
-        return aperture_transformation[:3, 1]
+        return aperture_transformation[..., :3, 1]
 
-    def sample(self, ha: float, dec: float) -> np.ndarray:
+    def sample(
+        self, ha: npt.NDArray[np.double], dec: npt.NDArray[np.double]
+    ) -> npt.NDArray[np.double]:
         """
         Compute the position of a vector in
         the aperture's frame.
 
-        :param ha: hour angle in degrees
-        :param dec: declination in degrees
-        :returns: the aperture sampled in the dome frame
+        :param ha: hour angles (N,) in degrees
+        :param dec: declinations (M,) in degrees
+        :returns: the aperture sampled in the dome frame (N, M, 4, K) where K is the number of sampled rays
         """
         inner_blocked_radius = self.sec_radius / self.radius
         unit_disk = sample_unit_disk(self.sample_rate, r_min=inner_blocked_radius)
@@ -146,13 +157,13 @@ class Aperture:
         y = np.zeros(n_samples)
         z = disk[1]
         ones = np.ones(n_samples)
-        points = np.column_stack((x, y, z, ones))
+        points = np.column_stack((x, y, z, ones)).T
 
         pose_matrix = self.transformation(ha, dec)
 
-        product = pt.transform(pose_matrix, points)
+        product = pose_matrix @ points
 
-        return product[:, :3]
+        return product[..., :3, :]
 
     def __repr__(self):
         return f"Aperture(mount={self.mount}, radius={self.radius}, sec_radius={self.sec_radius}, rate={self.sample_rate})"

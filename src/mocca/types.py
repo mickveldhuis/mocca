@@ -8,6 +8,7 @@ from typing import Self
 
 import h5py
 import numpy as np
+import numpy.typing as npt
 
 logger = logging.getLogger("MOCCA")
 
@@ -105,14 +106,14 @@ ObstructionResult = namedtuple("ObstructionResult", ["ratio", "mask"])
 
 @dataclass
 class BatchObstructionResult:
-    ratios: np.ndarray
-    masks: np.ndarray
+    ratios: npt.NDArray[np.double]
+    masks: npt.NDArray[np.bool]
 
-    ha: np.ndarray
-    dec: np.ndarray
-    az: np.ndarray
+    ha: npt.NDArray[np.double]
+    dec: npt.NDArray[np.double]
+    az: npt.NDArray[np.double]
 
-    def to_hdf5(self, file: Path | None = None) -> None:
+    def to_hdf5(self, file: Path) -> None:
         """
         Write an obstruction cube to disk as a HDF5 dataset.
 
@@ -125,12 +126,8 @@ class BatchObstructionResult:
                 f"expecting an array of obstruction fractions of shape {shape}, but got {self.ratios.shape}"
             )
 
-        date_tag = datetime.now(UTC).strftime("%Y%M%d%H%M%S")
-        filename = f"{date_tag}_mocca_cube.h5"
-        output_path = Path.cwd() / filename if file is None else file
-
-        with h5py.File(output_path, "w") as h5_file:
-            h5_file.attrs["timestamp"] = date_tag
+        with h5py.File(file, "w") as h5_file:
+            h5_file.attrs["timestamp"] = datetime.now(UTC).strftime("%Y%M%d%H%M%S")
 
             obstruction_ds = h5_file.create_dataset("obstruction", data=self.ratios)
             # TODO: add additional metadata as attributes, e.g. aperture identifier,
@@ -154,4 +151,4 @@ class BatchObstructionResult:
             obstruction_ds.dims[1].attach_scale(dec_ds)
             obstruction_ds.dims[2].attach_scale(az_ds)
 
-        logger.info("batch obstruction result written to %s", output_path)
+        logger.info("batch obstruction result written to %s", file)

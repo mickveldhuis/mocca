@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
+from matplotlib.ticker import PercentFormatter
 
 from mocca.aperture import Aperture
 from mocca.utils import sample_unit_disk
@@ -7,7 +9,7 @@ from mocca.utils import sample_unit_disk
 
 def plot_aperture_obstruction(
     aperture: Aperture,
-    is_blocked: np.ndarray,
+    is_blocked: npt.NDArray[np.double],
     dome_az: float,
 ) -> None:
     """Plot the aperture w/ obstructed sample points."""
@@ -60,31 +62,32 @@ def plot_aperture_obstruction(
     plt.show()
 
 
-def plot_batch_obstruction(ratios: np.ndarray, azimuths: np.ndarray):
+def plot_batch_obstruction(
+    ratios: npt.NDArray[np.double], azimuths: npt.NDArray[np.double]
+):
     """Display the aperture obstruction for the sampled azimuth angles on a polar graph."""
     fig = plt.figure(figsize=(5, 5), num="MOCCA - Batch Visualisation")
     frame = fig.add_subplot(1, 1, 1, polar=True)
 
-    frame.set_title("Percentage obstruction for sampled dome azimuths", fontsize=12)
-
     az = np.radians(azimuths)
-    percentages = 100.0 * ratios
-    frame.plot(az, percentages, ls="", marker="*", ms=6, color="black")
+    frame.plot(az, ratios, ls="", marker="*", ms=6, color="black")
 
-    # FIXME: remove the dummy zero point when the az range is close to 360.
+    az_closed = np.concatenate([az, [az[-1], az[0]]])
+    r_closed = np.concatenate([ratios, [0, 0]])
     frame.fill(
-        np.concatenate([az, [0]]),
-        np.concatenate([percentages, [0]]),
+        az_closed,
+        r_closed,
         alpha=0.2,
         color="red",
     )
 
-    perc_min = 0.0
-    perc_max = 120.0
-    frame.set_rmin(perc_min)
-    frame.set_rmax(perc_max)
+    r_min = 0.0
+    r_max = 1.2
+    frame.set_rlim(r_min, r_max)
+    frame.set_rlabel_position(90)
 
-    frame.set_rticks(np.arange(perc_min, perc_max, 20.0))
+    frame.set_rticks(np.arange(r_min, r_max, 0.2))
+    frame.yaxis.set_major_formatter(PercentFormatter(1))  # Note: y axis == r axis
 
     frame.grid(True)
     frame.set_aspect("equal")
