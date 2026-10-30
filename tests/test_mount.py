@@ -157,6 +157,10 @@ def test_composite_mount_with_angle(north_pole_mount, dec, direction, position):
 
 
 def test_evaluate_transformation_for_multiple_pointings(north_pole_mount):
+    """
+    Check whether bulk computing the mount transformation matrices
+    yields the expected dimensions.
+    """
     ha = np.linspace(-45, 45, 10)
     dec = np.linspace(40, 70, 4)
 
