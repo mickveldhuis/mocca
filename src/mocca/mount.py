@@ -4,7 +4,7 @@ from typing import Protocol, Self, runtime_checkable
 import numpy as np
 import numpy.typing as npt
 
-from mocca.transformations import rot_x_nd, rot_y_nd, rot_z_nd, trans, trans_nd
+from mocca.transformations import rot_x_nd, rot_y, rot_z_nd, trans, trans_nd
 from mocca.types import TelescopeInfo
 
 
@@ -55,9 +55,9 @@ class EquatorialMount(Transformable):
         Calculate the transformation matrix from
         the aperture to the dome frame.
 
-        :param ha: hour angle in degrees
-        :param dec: declination in degrees
-        :returns: aperture-to-dome transformation matrix
+        :param ha: hour angles (N,) in degrees
+        :param dec: declinations (M,) in degrees
+        :returns: aperture-to-dome transformation matrix (N, M, 4, 4)
         """
         H_01 = trans(self.height, axis=2)
         print("H_01 =", H_01.shape)
@@ -73,8 +73,8 @@ class EquatorialMount(Transformable):
         # Ensure that each array (of matrices) has shape (ha, dec, 4, 4)
         H = (
             H_01[np.newaxis, np.newaxis, :, :]
-            @ H_12[:, np.newaxis, :, :]
-            @ H_23[np.newaxis, :, :, :]
+            @ H_12[:, np.newaxis, :, :]  # function of the hour angle
+            @ H_23[np.newaxis, :, :, :]  # function of the declination
         )
 
         return H
@@ -111,16 +111,15 @@ class CompositeMount(Transformable):
         Calculate the transformation matrix from
         the aperture to the dome frame.
 
-        :param ha: hour angle in degrees
-        :param dec: declination in degrees
-        :returns: aperture-to-dome transformation matrix
+        :param ha: hour angles (N,) in degrees
+        :param dec: declinations (M,) in degrees
+        :returns: aperture-to-dome transformation matrix (N, M, 4, 4)
         """
-        H_base = self.base_mount.transformation(ha, dec)
+        H_base = self.base_mount.transformation(ha, dec)  # shape -> (ha, dec, 4, 4)
 
-        # TODO: do we need to broadcast H_offset?
-        H_offset = rot_y_nd(self.angle) @ trans_nd(self.offset, axis=2)
+        H_offset = rot_y(self.angle) @ trans(self.offset, axis=2)  # shape -> (4, 4)
 
-        return H_base @ H_offset
+        return H_base @ np.broadcast_to(H_offset, H_base.shape)
 
     def __repr__(self):
         return f"CompositeMount(base={self.base_mount}, offset={self.offset}, angle={self.angle})"
