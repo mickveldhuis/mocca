@@ -4,7 +4,7 @@ from typing import Protocol, Self, runtime_checkable
 import numpy as np
 import numpy.typing as npt
 
-from mocca.transformations import rot_x, rot_y, rot_z, trans
+from mocca.transformations import rot_x_nd, rot_y_nd, rot_z_nd, trans, trans_nd
 from mocca.types import TelescopeInfo
 
 
@@ -13,14 +13,16 @@ class Transformable(Protocol):
     """Protocol for defining classes that contain mount transformation."""
 
     @abstractmethod
-    def transformation(self, ha: float, dec: float) -> npt.NDArray[np.double]:
+    def transformation(
+        self, ha: npt.NDArray[np.double], dec: npt.NDArray[np.double]
+    ) -> npt.NDArray[np.double]:
         """
         Calculate the transformation matrix from
         the aperture to the dome frame.
 
-        :param ha: hour angle in degrees
-        :param dec: declination in degrees
-        :returns: aperture-to-dome transformation matrix
+        :param ha: hour angles (N,) in degrees
+        :param dec: declinations (M,) in degrees
+        :returns: aperture-to-dome transformation matrix (N, M, 4, 4)
         """
         raise NotImplementedError
 
@@ -46,7 +48,9 @@ class EquatorialMount(Transformable):
         self.dec_axis_offset = dec_axis_offset
         self.latitude = latitude
 
-    def transformation(self, ha: float, dec: float) -> npt.NDArray[np.double]:
+    def transformation(
+        self, ha: npt.NDArray[np.double], dec: npt.NDArray[np.double]
+    ) -> npt.NDArray[np.double]:
         """
         Calculate the transformation matrix from
         the aperture to the dome frame.
@@ -56,14 +60,17 @@ class EquatorialMount(Transformable):
         :returns: aperture-to-dome transformation matrix
         """
         H_01 = trans(self.height, axis=2)
+        print("H_01 =", H_01.shape)
         H_12 = (
-            rot_x(90.0 - self.latitude)
-            @ rot_z(-ha)
-            @ trans(self.ha_axis_offset, axis=2)
+            rot_x_nd(90.0 - self.latitude)
+            @ rot_z_nd(-ha)
+            @ trans_nd(self.ha_axis_offset, axis=2)
         )
-        H_23 = rot_x(dec) @ trans(-self.dec_axis_offset, axis=0)
+        print("H_02 =", H_12.shape)
+        H_23 = rot_x_nd(dec) @ trans_nd(-self.dec_axis_offset, axis=0)
+        print("H_23 =", H_23.shape)
 
-        H = H_01 @ H_12 @ H_23
+        H = H_01[np.newaxis, np.newaxis, :, :] @ H_12 @ H_23
 
         return H
 
@@ -92,7 +99,9 @@ class CompositeMount(Transformable):
         self.offset = offset
         self.angle = angle
 
-    def transformation(self, ha: float, dec: float) -> npt.NDArray[np.double]:
+    def transformation(
+        self, ha: npt.NDArray[np.double], dec: npt.NDArray[np.double]
+    ) -> npt.NDArray[np.double]:
         """
         Calculate the transformation matrix from
         the aperture to the dome frame.
@@ -103,7 +112,7 @@ class CompositeMount(Transformable):
         """
         H_base = self.base_mount.transformation(ha, dec)
 
-        H_offset = rot_y(self.angle) @ trans(self.offset, axis=2)
+        H_offset = rot_y_nd(self.angle) @ trans_nd(self.offset, axis=2)
 
         return H_base @ H_offset
 

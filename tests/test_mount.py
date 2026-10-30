@@ -49,7 +49,7 @@ def validate_position_vector(
     """
     assert len(expected_vector) == 3
 
-    position_vector = transformation_matrix[:3, 3]
+    position_vector = transformation_matrix[..., :3, 3]
     assert np.allclose(position_vector, expected_vector)
 
 
@@ -60,7 +60,7 @@ def validate_direction_vector(transformation_matrix, expected_vector):
     """
     assert len(expected_vector) == 3
 
-    direction_vector = transformation_matrix[:3, 1]
+    direction_vector = transformation_matrix[..., :3, 1]
     assert np.allclose(direction_vector, expected_vector)
 
 
